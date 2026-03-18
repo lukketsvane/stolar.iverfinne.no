@@ -95,7 +95,6 @@ export async function fetchAllStolar(): Promise<Stol[]> {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
-        next: { revalidate: 0 }, // Don't cache fetch itself, ISR handles caching
       }
     );
 

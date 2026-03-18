@@ -130,7 +130,10 @@ export default function DetailPanel({ stol, stolar, onNavigate, onClose }: Detai
               alt={stol.namn}
               auto-rotate
               camera-controls
-              touch-action="pan-y"
+              disable-zoom
+              disable-pan
+              touch-action="none"
+              interaction-prompt="none"
               style={{ width: "100%", height: "100%" }}
             />
           ) : (

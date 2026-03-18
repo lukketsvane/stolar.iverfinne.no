@@ -9,7 +9,10 @@ declare module "react" {
           alt?: string;
           "auto-rotate"?: boolean | string;
           "camera-controls"?: boolean | string;
+          "disable-zoom"?: boolean | string;
+          "disable-pan"?: boolean | string;
           "touch-action"?: string;
+          "interaction-prompt"?: string;
           poster?: string;
           loading?: string;
           ar?: boolean | string;
