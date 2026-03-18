@@ -19,19 +19,28 @@ interface KatalogProps {
   stolar: Stol[];
 }
 
+export interface ActiveFilter {
+  category: string;
+  value: string;
+}
+
+function filterLabel(f: ActiveFilter): string {
+  const labels: Record<string, string> = {
+    hundreaar: "Hundreår", nasjonalitet: "Land", materialar: "Material",
+    stilperiode: "Stil", teknikk: "Teknikk", produsent: "Produsent",
+    nemning: "Type", produksjonsstad: "Stad",
+  };
+  return labels[f.category] || f.category;
+}
+
 export default function Katalog({ stolar }: KatalogProps) {
-  const [activeFilter, setActiveFilter] = useState<{
-    category: string;
-    value: string;
-  } | null>(null);
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStol, setSelectedStol] = useState<Stol | null>(null);
   const [gridSize, setGridSize] = useState(96);
 
-  // Build search index once
   const searchIndex = useMemo(() => buildIndex(stolar), [stolar]);
 
-  // Close detail panel on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSelectedStol(null);
@@ -40,125 +49,88 @@ export default function Katalog({ stolar }: KatalogProps) {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Apply category filter first
   const categoryFiltered = useMemo(() => {
     if (!activeFilter) return stolar;
     const { category, value } = activeFilter;
     return stolar.filter((s) => {
       switch (category) {
-        case "hundreaar":
-          return s.hundreaar === value;
-        case "nasjonalitet":
-          return s.nasjonalitet === value;
-        case "materialar":
-          return s.materialar.includes(value);
-        case "stilperiode":
-          return s.stilperiode === value;
-        default:
-          return true;
+        case "hundreaar": return s.hundreaar === value;
+        case "nasjonalitet": return (s.nasjonalitet || s.nasjonalitetAvleidd) === value;
+        case "materialar": return s.materialar.includes(value);
+        case "stilperiode": return s.stilperiode === value;
+        case "teknikk": return s.teknikk.includes(value);
+        case "produsent": return (s.produsent || s.produsentNormalisert) === value;
+        case "nemning": return (s.nemning1 || s.nemning) === value;
+        case "produksjonsstad": return (s.produksjonsstad || s.produksjonsstadNormalisert) === value;
+        default: return true;
       }
     });
   }, [stolar, activeFilter]);
 
-  // Then apply search on top of filter
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return categoryFiltered;
-    const results = search(searchQuery, categoryFiltered, searchIndex);
-    return results.map((r) => r.stol);
+    return search(searchQuery, categoryFiltered, searchIndex).map((r) => r.stol);
   }, [categoryFiltered, searchQuery, searchIndex]);
 
-  // Century distribution for sparkline (always from full set)
   const centuryData = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const h of HUNDREAAR_ORDER) counts[h] = 0;
     for (const s of stolar) {
-      if (s.hundreaar && counts[s.hundreaar] !== undefined) {
-        counts[s.hundreaar]++;
-      }
+      if (s.hundreaar && counts[s.hundreaar] !== undefined) counts[s.hundreaar]++;
     }
-    return HUNDREAAR_ORDER.map((h) => ({ label: h, count: counts[h] })).filter(
-      (d) => d.count > 0
-    );
+    return HUNDREAAR_ORDER.map((h) => ({ label: h, count: counts[h] })).filter((d) => d.count > 0);
   }, [stolar]);
 
   const handleFilter = useCallback((category: string, value: string) => {
     setActiveFilter({ category, value });
+    setSelectedStol(null);
   }, []);
 
-  const handleClear = useCallback(() => {
-    setActiveFilter(null);
-  }, []);
-
-  const handleSearchClear = useCallback(() => {
-    setSearchQuery("");
-  }, []);
-
-  const handleClearAll = useCallback(() => {
-    setActiveFilter(null);
-    setSearchQuery("");
-  }, []);
+  const handleClear = useCallback(() => { setActiveFilter(null); }, []);
+  const handleSearchClear = useCallback(() => { setSearchQuery(""); }, []);
+  const handleClearAll = useCallback(() => { setActiveFilter(null); setSearchQuery(""); }, []);
 
   const hasAnyFilter = activeFilter !== null || searchQuery.length > 0;
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <header className="px-4 md:px-8 pt-8 pb-2">
         <div className="max-w-[1800px] mx-auto">
-          {/* Counter - dramatic Iweins style */}
           <div className="mb-6">
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-neutral-900 leading-[0.9] tracking-tighter">
               Stolar.
             </h1>
             <div className="mt-4 flex items-end gap-6">
               <p className="text-lg md:text-2xl text-neutral-500">
-                <span className="text-neutral-900 font-black tabular-nums text-2xl md:text-3xl">
-                  {filtered.length}
-                </span>{" "}
-                {hasAnyFilter ? (
-                  <>
-                    stolar{" "}
-                    <span className="text-neutral-400">
-                      av {stolar.length} dokumentert
-                    </span>
-                  </>
-                ) : (
-                  "stolar dokumentert"
-                )}
+                <span className="text-neutral-900 font-black tabular-nums text-2xl md:text-3xl">{filtered.length}</span>{" "}
+                {hasAnyFilter ? (<>stolar <span className="text-neutral-400">av {stolar.length}</span></>) : "stolar dokumentert"}
               </p>
               <div className="hidden md:block w-48">
-                <Sparkline
-                  data={centuryData}
-                  activeValue={
-                    activeFilter?.category === "hundreaar"
-                      ? activeFilter.value
-                      : null
-                  }
-                />
+                <Sparkline data={centuryData} activeValue={activeFilter?.category === "hundreaar" ? activeFilter.value : null} />
               </div>
             </div>
           </div>
 
-          {/* Search */}
+          {/* Active filter chip */}
+          {activeFilter && (
+            <div className="mb-3">
+              <button onClick={handleClear} className="inline-flex items-center gap-1.5 text-sm bg-neutral-900 text-white pl-3 pr-2 py-1 rounded-full">
+                <span className="text-neutral-400 text-xs">{filterLabel(activeFilter)}</span>
+                <span>{activeFilter.value}</span>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" className="ml-0.5 opacity-50">
+                  <line x1="4" y1="4" x2="10" y2="10" /><line x1="10" y1="4" x2="4" y2="10" />
+                </svg>
+              </button>
+            </div>
+          )}
+
           <div className="mb-4 max-w-xl">
-            <SearchBar
-              query={searchQuery}
-              resultCount={searchQuery.trim() ? filtered.length : null}
-              totalCount={categoryFiltered.length}
-              onQueryChange={setSearchQuery}
-              onClear={handleSearchClear}
-            />
+            <SearchBar query={searchQuery} resultCount={searchQuery.trim() ? filtered.length : null} totalCount={categoryFiltered.length} onQueryChange={setSearchQuery} onClear={handleSearchClear} />
           </div>
 
-          {/* Filter bar + size toggle */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <FilterBar
-                stolar={stolar}
-                activeFilter={activeFilter}
-                onFilter={handleFilter}
-                onClear={handleClear}
-              />
+              <FilterBar stolar={stolar} activeFilter={activeFilter} onFilter={handleFilter} onClear={handleClear} />
             </div>
             <div className="flex-shrink-0 pt-0.5">
               <SizeToggle size={gridSize} onSizeChange={setGridSize} />
@@ -167,42 +139,21 @@ export default function Katalog({ stolar }: KatalogProps) {
         </div>
       </header>
 
-      {/* Grid */}
       <main className="px-4 md:px-8 pb-16">
         <div className="max-w-[1800px] mx-auto">
           {filtered.length === 0 ? (
             <div className="py-20 text-center text-neutral-400">
-              <p className="text-lg">
-                {searchQuery
-                  ? `Ingen treff for «${searchQuery}»`
-                  : "Ingen stolar funne."}
-              </p>
-              <button
-                onClick={handleClearAll}
-                className="mt-2 underline underline-offset-2 text-sm hover:text-neutral-900"
-              >
-                Fjern alle filter
-              </button>
+              <p className="text-lg">{searchQuery ? `Ingen treff for «${searchQuery}»` : "Ingen stolar funne."}</p>
+              <button onClick={handleClearAll} className="mt-2 underline underline-offset-2 text-sm hover:text-neutral-900">Fjern alle filter</button>
             </div>
           ) : (
-            <StolGrid
-              stolar={filtered}
-              size={gridSize}
-              onSizeChange={setGridSize}
-              onSelect={setSelectedStol}
-            />
+            <StolGrid stolar={filtered} size={gridSize} onSizeChange={setGridSize} onSelect={setSelectedStol} />
           )}
         </div>
       </main>
 
-      {/* Detail panel */}
       {selectedStol && (
-        <DetailPanel
-              stol={selectedStol}
-              stolar={filtered}
-              onNavigate={setSelectedStol}
-              onClose={() => setSelectedStol(null)}
-            />
+        <DetailPanel stol={selectedStol} stolar={filtered} onNavigate={setSelectedStol} onFilter={handleFilter} onClose={() => setSelectedStol(null)} />
       )}
     </div>
   );
