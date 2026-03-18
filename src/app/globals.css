@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+  --font-sans: var(--font-sans);
+}
+
+body {
+  background: #ffffff;
+  color: #171717;
+}
+
+.font-sans {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Tabular numbers for counters */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Prevent iOS double-tap zoom and page zoom */
+html {
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Smooth grid size transitions */
+.grid {
+  transition: grid-template-columns 0.15s ease-out;
+}
