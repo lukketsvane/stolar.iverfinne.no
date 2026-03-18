@@ -12,16 +12,22 @@ export interface SearchIndex {
 const FIELD_WEIGHTS: { key: keyof Stol | "all_materials" | "all_teknikk" | "all_emneord"; weight: number }[] = [
   { key: "namn", weight: 10 },
   { key: "produsent", weight: 8 },
+  { key: "produsentNormalisert", weight: 7 },
   { key: "objektId", weight: 7 },
   { key: "stilperiode", weight: 6 },
   { key: "nasjonalitet", weight: 5 },
+  { key: "nasjonalitetAvleidd", weight: 5 },
   { key: "all_materials", weight: 5 },
   { key: "all_teknikk", weight: 4 },
   { key: "materialkommentar", weight: 3 },
+  { key: "materialarForslag", weight: 3 },
   { key: "datering", weight: 3 },
   { key: "produksjonsstad", weight: 3 },
+  { key: "produksjonsstadNormalisert", weight: 3 },
   { key: "nemning", weight: 2 },
+  { key: "nemning1", weight: 2 },
   { key: "hundreaar", weight: 2 },
+  { key: "erverving", weight: 1 },
   { key: "all_emneord", weight: 1 },
 ];
 

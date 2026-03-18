@@ -9,7 +9,9 @@ export interface Stol {
   tilAar: number | null;
   hundreaar: string | null;
   nasjonalitet: string | null;
+  nasjonalitetAvleidd: string;
   materialar: string[];
+  materialarForslag: string;
   stilperiode: string | null;
   teknikk: string[];
   hoegde: number | null;
@@ -19,10 +21,14 @@ export interface Stol {
   estimertVekt: number | null;
   materialkommentar: string;
   produsent: string;
+  produsentNormalisert: string;
   produksjonsstad: string;
+  produksjonsstadNormalisert: string;
   nasjonalmuseetUrl: string | null;
   tredfil: string;
   nemning: string;
+  nemning1: string;
+  erverving: string;
   emneord: string[];
 }
 
@@ -40,7 +46,6 @@ export interface FilterCounts {
   stilperiode: Record<string, number>;
 }
 
-// Material groupings for UI
 export const MATERIAL_GROUPS: Record<string, string[]> = {
   "Tre": ["Eik", "Bøk", "Furu", "Bjørk", "Mahogni", "Valnøtt", "Ask", "Alm", "Kirsebær", "Palisander", "Teak", "Lind", "Lønn", "Seder", "Bambus", "Poppel", "Lerk"],
   "Metall": ["Stål", "Stålrør", "Aluminium", "Jern", "Messing", "Krom", "Bronse", "Kopar", "Sink"],
