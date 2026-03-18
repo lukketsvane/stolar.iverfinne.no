@@ -22,6 +22,15 @@ function extractFiles(files: any[]): string | null {
   return null;
 }
 
+/** Fix bguw URL: NMK/OK items stored under VA_3d/ should be NM_stolar/ */
+function fixBguwUrl(url: string | null, objektId: string): string | null {
+  if (!url) return null;
+  if ((objektId.startsWith("OK-") || objektId.startsWith("NMK")) && url.includes("/VA_3d/")) {
+    return url.replace("/VA_3d/", "/NM_stolar/");
+  }
+  return url;
+}
+
 function prop(page: any, key: string): any {
   const p = page?.properties?.[key];
   if (!p) return null;
@@ -43,12 +52,13 @@ function prop(page: any, key: string): any {
 
 function pageToStol(page: any): Stol {
   const fraaAar = prop(page, "Frå år");
+  const objektId = prop(page, "Objekt-ID") || "";
   return {
     id: page.id,
     namn: prop(page, "Namn") || "",
-    objektId: prop(page, "Objekt-ID") || "",
+    objektId,
     bileteUrl: prop(page, "Bilete-URL"),
-    bileteBguw: prop(page, "Bilete-bguw"),
+    bileteBguw: fixBguwUrl(prop(page, "Bilete-bguw"), objektId),
     datering: prop(page, "Datering") || "",
     fraaAar,
     tilAar: prop(page, "Til år"),
