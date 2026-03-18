@@ -37,7 +37,7 @@ export default function Katalog({ stolar }: KatalogProps) {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStol, setSelectedStol] = useState<Stol | null>(null);
-  const [gridSize, setGridSize] = useState(96);
+  const [gridSize, setGridSize] = useState(80);
 
   const searchIndex = useMemo(() => buildIndex(stolar), [stolar]);
 
@@ -94,15 +94,15 @@ export default function Katalog({ stolar }: KatalogProps) {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="px-4 md:px-8 pt-8 pb-2">
+      <header className="px-3 md:px-6 pt-4 pb-1">
         <div className="max-w-[1800px] mx-auto">
-          <div className="mb-6">
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-neutral-900 leading-[0.9] tracking-tighter">
+          <div className="mb-4">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-neutral-900 leading-[0.85] tracking-tighter">
               Stolar.
             </h1>
-            <div className="mt-4 flex items-end gap-6">
-              <p className="text-lg md:text-2xl text-neutral-500">
-                <span className="text-neutral-900 font-black tabular-nums text-2xl md:text-3xl">{filtered.length}</span>{" "}
+            <div className="mt-2 flex items-end gap-4">
+              <p className="text-base md:text-xl text-neutral-500">
+                <span className="text-neutral-900 font-black tabular-nums text-xl md:text-2xl">{filtered.length}</span>{" "}
                 {hasAnyFilter ? (<>stolar <span className="text-neutral-400">av {stolar.length}</span></>) : "stolar dokumentert"}
               </p>
               <div className="hidden md:block w-48">
@@ -139,7 +139,7 @@ export default function Katalog({ stolar }: KatalogProps) {
         </div>
       </header>
 
-      <main className="px-4 md:px-8 pb-16">
+      <main className="px-3 md:px-6 pb-12">
         <div className="max-w-[1800px] mx-auto">
           {filtered.length === 0 ? (
             <div className="py-20 text-center text-neutral-400">

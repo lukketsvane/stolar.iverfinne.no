@@ -6,40 +6,49 @@
   --font-sans: var(--font-sans);
 }
 
+/* ── Base scale: everything tighter, ~80% feel at 100% zoom ── */
+html {
+  font-size: 13.5px;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
 body {
   background: #ffffff;
   color: #171717;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .font-sans {
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
 }
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Mobile-native feel ── */
-
-html {
-  touch-action: manipulation;
-  -webkit-text-size-adjust: 100%;
-  /* iOS safe area padding */
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+/* ── iOS safe areas ── */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
 }
 
-/* Kill rubber-band overscroll on body but allow momentum scroll inside panels */
-html, body {
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
+@media (display-mode: standalone) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
-/* Smooth grid size transitions */
+/* ── Smooth grid resize ── */
 .grid {
-  transition: grid-template-columns 0.15s ease-out;
+  transition: grid-template-columns 0.12s ease-out;
 }
 
-/* Detail panel slide-in */
+/* ── Panel animations ── */
 @keyframes slideIn {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
@@ -52,17 +61,18 @@ html, body {
   animation: slideIn 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 .backdrop-enter {
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.15s ease-out;
 }
 
-/* iOS standalone: extra bottom padding for home indicator */
-@media (display-mode: standalone) {
-  body {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
-
-/* Tap highlight kill */
+/* ── Touch: no highlight, no callout, no select on interactive ── */
 * {
   -webkit-tap-highlight-color: transparent;
+}
+button, a {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+img {
+  -webkit-user-drag: none;
+  user-select: none;
 }
