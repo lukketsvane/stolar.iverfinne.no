@@ -1,10 +1,10 @@
 import Katalog from "@/components/Katalog";
 import { fetchAllStolar } from "@/lib/notion";
 
-// Dynamic — never prerender at build time, always fetch fresh from Notion at runtime.
-// Cached for 60s via ISR so subsequent requests within that window are instant.
-export const dynamic = "force-dynamic";
+// ISR: built at deploy time (no timeout limit), then revalidates in background every 60s.
+// New Notion changes appear within 60 seconds without a redeploy.
 export const revalidate = 60;
+export const maxDuration = 60;
 
 export default async function Home() {
   const stolar = await fetchAllStolar();
