@@ -1,6 +1,7 @@
 "use client";
 
 import { type Stol } from "@/lib/types";
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface StolGridProps {
@@ -144,14 +145,17 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
                   </div>
                 )}
 
-                {/* Image */}
-                <div className="aspect-square p-1">
+                {/* Image — next/image generates optimized WebP thumbnails cached at edge */}
+                <div className="aspect-square p-1 relative">
                   {imgUrl ? (
-                    <img
+                    <Image
                       src={imgUrl}
                       alt={stol.namn}
+                      width={size * 2}
+                      height={size * 2}
                       loading="lazy"
                       draggable={false}
+                      quality={60}
                       className="w-full h-full object-contain pointer-events-none"
                     />
                   ) : (

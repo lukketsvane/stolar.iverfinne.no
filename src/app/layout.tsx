@@ -10,9 +10,14 @@ const sans = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Stolar — Stolkatalog",
-  description:
-    "Visuell database over stolar frå norske og internasjonale samlingar.",
+  title: "Stolar",
+  description: "Visuell database over stolar",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Stolar",
+  },
   openGraph: {
     title: "Stolar.",
     description: "Visuell database over stolar.",
@@ -24,6 +29,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -33,8 +40,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="nn">
+      <head>
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
       <body
-        className={`${sans.variable} font-sans antialiased bg-white text-neutral-900`}
+        className={`${sans.variable} font-sans antialiased bg-white text-neutral-900 overscroll-none`}
       >
         {children}
         <Script

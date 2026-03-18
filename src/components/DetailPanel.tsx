@@ -73,7 +73,7 @@ export default function DetailPanel({ stol, stolar, onNavigate, onClose }: Detai
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/20 backdrop-blur-[1px]"
+        className="absolute inset-0 bg-black/20 backdrop-enter"
         onClick={onClose}
       />
 
@@ -81,7 +81,7 @@ export default function DetailPanel({ stol, stolar, onNavigate, onClose }: Detai
       {hasPrev && (
         <button
           onClick={goPrev}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 hidden md:flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-md text-neutral-500 hover:text-neutral-900 hover:bg-white transition-colors"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 hidden md:flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm  text-neutral-500 hover:text-neutral-900 hover:bg-white transition-colors"
           aria-label="Førre stol"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -92,7 +92,7 @@ export default function DetailPanel({ stol, stolar, onNavigate, onClose }: Detai
       {hasNext && (
         <button
           onClick={goNext}
-          className="absolute right-[calc(32rem+1rem)] top-1/2 -translate-y-1/2 z-10 w-10 h-10 hidden md:flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-md text-neutral-500 hover:text-neutral-900 hover:bg-white transition-colors"
+          className="absolute right-[calc(32rem+1rem)] top-1/2 -translate-y-1/2 z-10 w-10 h-10 hidden md:flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm  text-neutral-500 hover:text-neutral-900 hover:bg-white transition-colors"
           aria-label="Neste stol"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -102,7 +102,7 @@ export default function DetailPanel({ stol, stolar, onNavigate, onClose }: Detai
       )}
 
       {/* Panel */}
-      <div className="relative w-full max-w-lg bg-white shadow-2xl overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-white overflow-y-auto panel-enter" style={{ WebkitOverflowScrolling: "touch" }}>
         {/* Close button */}
         <button
           onClick={onClose}
@@ -180,10 +180,10 @@ export default function DetailPanel({ stol, stolar, onNavigate, onClose }: Detai
           {modelUrl && (
             <button
               onClick={() => setShow3D(!show3D)}
-              className={`absolute bottom-3 right-3 w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
+              className={`absolute bottom-3 right-3 w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
                 show3D
-                  ? "bg-neutral-900 shadow-lg"
-                  : "bg-white/80 backdrop-blur-sm shadow-md hover:bg-white"
+                  ? "bg-neutral-900"
+                  : "bg-white/80 hover:bg-white"
               }`}
               aria-label={show3D ? "Vis bilete" : "Vis 3D-modell"}
               title={show3D ? "Vis bilete" : "Vis 3D-modell"}

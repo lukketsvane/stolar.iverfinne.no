@@ -10,7 +10,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.metmuseum.org" },
       { protocol: "https", hostname: "images.collection.cooperhewitt.org" },
     ],
-    unoptimized: true,
+    // Vercel optimizes + caches images at edge. Small tiles get tiny WebP thumbnails.
+    deviceSizes: [96, 192, 384, 640, 1080],
+    imageSizes: [48, 64, 96, 128, 192, 256],
   },
 };
 
