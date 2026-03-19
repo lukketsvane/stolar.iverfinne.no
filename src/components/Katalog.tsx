@@ -37,7 +37,7 @@ export default function Katalog({ stolar }: KatalogProps) {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStol, setSelectedStol] = useState<Stol | null>(null);
-  const [gridSize, setGridSize] = useState(80);
+  const [gridSize, setGridSize] = useState(120);
 
   const searchIndex = useMemo(() => buildIndex(stolar), [stolar]);
 
@@ -98,7 +98,7 @@ export default function Katalog({ stolar }: KatalogProps) {
         <div className="max-w-[1800px] mx-auto">
           <div className="mb-4">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-neutral-900 leading-[0.85] tracking-tighter">
-              Stolar.
+              Norske<br />stolar.
             </h1>
             <div className="mt-2 flex items-end gap-4">
               <p className="text-base md:text-xl text-neutral-500">

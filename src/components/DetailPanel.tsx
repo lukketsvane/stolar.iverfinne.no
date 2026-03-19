@@ -57,6 +57,9 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
   const modelUrl = glbUrl(stol);
   const [show3D, setShow3D] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
+
+  useEffect(() => { setImgFailed(false); }, [stol.id]);
 
   // Bottom sheet state
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -404,7 +407,7 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
           className="absolute inset-0 p-8"
           style={{ transform: `translateX(${swipeX - window.innerWidth}px)`, opacity: Math.min(1, swipeX / 100) }}
         >
-          <img src={prevImageUrl} alt="" className="w-full h-full object-contain opacity-50" />
+          <img src={prevImageUrl} alt="" className="w-full h-full object-contain opacity-50" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
       )}
       {/* Peek: next image */}
@@ -413,7 +416,7 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
           className="absolute inset-0 p-8"
           style={{ transform: `translateX(${swipeX + window.innerWidth}px)`, opacity: Math.min(1, Math.abs(swipeX) / 100) }}
         >
-          <img src={nextImageUrl} alt="" className="w-full h-full object-contain opacity-50" />
+          <img src={nextImageUrl} alt="" className="w-full h-full object-contain opacity-50" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
       )}
 
@@ -424,9 +427,9 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
       >
         {show3D && modelUrl ? (
           <model-viewer src={modelUrl} alt={stol.namn} auto-rotate camera-controls disable-zoom disable-pan touch-action="none" interaction-prompt="none" style={{ width: "100%", height: "100%" }} />
-        ) : imageUrl ? (
+        ) : imageUrl && !imgFailed ? (
           <div className="w-full h-full p-8">
-            <img src={imageUrl} alt={stol.namn} className="w-full h-full object-contain" />
+            <img src={imageUrl} alt={stol.namn} className="w-full h-full object-contain" onError={() => setImgFailed(true)} />
           </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-neutral-200 text-4xl font-bold">

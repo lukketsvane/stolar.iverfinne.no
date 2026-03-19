@@ -5,7 +5,7 @@ interface SizeToggleProps {
   onSizeChange: (size: number) => void;
 }
 
-const SIZES = [48, 96, 192];
+const SIZES = [64, 120, 192];
 
 export default function SizeToggle({ size, onSizeChange }: SizeToggleProps) {
   return (
@@ -28,7 +28,7 @@ export default function SizeToggle({ size, onSizeChange }: SizeToggleProps) {
             viewBox="0 0 14 14"
             fill="currentColor"
           >
-            {s === 48 && (
+            {s === 64 && (
               <>
                 <rect x="1" y="1" width="3" height="3" rx="0.5" />
                 <rect x="5.5" y="1" width="3" height="3" rx="0.5" />
@@ -41,7 +41,7 @@ export default function SizeToggle({ size, onSizeChange }: SizeToggleProps) {
                 <rect x="10" y="10" width="3" height="3" rx="0.5" />
               </>
             )}
-            {s === 96 && (
+            {s === 120 && (
               <>
                 <rect x="1" y="1" width="5.5" height="5.5" rx="0.5" />
                 <rect x="7.5" y="1" width="5.5" height="5.5" rx="0.5" />
