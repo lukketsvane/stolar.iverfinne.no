@@ -1,13 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Inter } from "next/font/google";
 import "./globals.css";
-
-const sans = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Stolar",
@@ -44,7 +37,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body
-        className={`${sans.variable} font-sans antialiased bg-white text-neutral-900 overscroll-none`}
+        className="font-sans antialiased bg-white text-neutral-900 overscroll-none"
       >
         {children}
         <Script

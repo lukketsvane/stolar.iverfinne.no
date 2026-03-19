@@ -1,12 +1,12 @@
 import Katalog from "@/components/Katalog";
 import { fetchAllStolar } from "@/lib/notion";
 
-// ISR: serve cached page, revalidate in the background every 60 s.
-// Data stays fresh without redeploying.
-export const revalidate = 60;
+// ISR: revalidate every 5 min (GitHub data syncs every 6 h).
+export const revalidate = 300;
 
-// Notion pagination fetches ~2 300 items (≈20 s). Allow up to 60 s.
-export const maxDuration = 60;
+// Force dynamic rendering — the data comes from an external API
+// and can't be fetched at build time in all environments.
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const stolar = await fetchAllStolar();
