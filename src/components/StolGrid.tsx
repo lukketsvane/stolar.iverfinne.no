@@ -48,6 +48,11 @@ function Initials({ namn }: { namn: string }) {
 export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolGridProps) {
   const [visibleCount, setVisibleCount] = useState(120);
   const [preview, setPreview] = useState<Stol | null>(null);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const handleImageError = useCallback((url: string) => {
+    setFailedImages(prev => new Set(prev).add(url));
+  }, []);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const sizeRef = useRef(size);
@@ -219,7 +224,7 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
               className="group cursor-pointer focus:outline-none text-left grid-item-press"
               title={stol.namn}
             >
-              <div className={`relative bg-white overflow-hidden ${showLabels ? "border border-neutral-200" : ""}`}>
+              <div className={`relative bg-white overflow-hidden ${size >= 56 ? "border border-neutral-200" : ""}`}>
                 {showId && (
                   <div className="flex justify-between items-baseline px-1 pt-0.5 text-[8px] text-neutral-400 font-mono leading-none select-none">
                     <span>{prefix}</span>
@@ -227,8 +232,8 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
                   </div>
                 )}
 
-                <div className="aspect-square p-0.5">
-                  {imgUrl ? (
+                <div className={`aspect-square ${size >= 96 ? 'p-1.5' : 'p-0.5'}`}>
+                  {imgUrl && !failedImages.has(imgUrl) ? (
                     <Image
                       src={imgUrl}
                       alt={stol.namn}
@@ -238,6 +243,7 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
                       draggable={false}
                       quality={50}
                       className="w-full h-full object-contain pointer-events-none select-none"
+                      onError={() => handleImageError(imgUrl)}
                     />
                   ) : (
                     <Initials namn={stol.namn} />
@@ -246,7 +252,7 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
 
                 {showLabels && (
                   <div className="px-1 pb-1 pt-0">
-                    <p className="text-[8px] font-medium text-neutral-700 leading-tight truncate tracking-wide select-none">
+                    <p className={`${size >= 120 ? 'text-[9px]' : 'text-[8px]'} font-medium text-neutral-700 leading-tight truncate tracking-wide select-none`}>
                       {name || "STOL"}
                     </p>
                   </div>
@@ -274,11 +280,12 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
         >
           <div className="preview-card bg-white rounded-2xl shadow-2xl overflow-hidden max-w-[280px] w-[70vw]" onClick={(e) => { e.stopPropagation(); openFromPreview(); }}>
             <div className="aspect-square bg-neutral-50 p-4">
-              {getImageUrl(preview) ? (
+              {(() => { const url = getImageUrl(preview); return url && !failedImages.has(url); })() ? (
                 <img
                   src={getImageUrl(preview)!}
                   alt={preview.namn}
                   className="w-full h-full object-contain"
+                  onError={() => { const url = getImageUrl(preview); if (url) handleImageError(url); }}
                 />
               ) : (
                 <Initials namn={preview.namn} />
