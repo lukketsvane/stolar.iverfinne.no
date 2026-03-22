@@ -63,7 +63,7 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
 
   // Bottom sheet state
   const sheetRef = useRef<HTMLDivElement>(null);
-  const [sheetY, setSheetY] = useState(SNAP_HALF); // fraction from top
+  const [sheetY, setSheetY] = useState(SNAP_FULL); // open full-screen
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({
     startY: 0,
@@ -168,24 +168,13 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
     const v = dragRef.current.velocity;
     const y = sheetY;
 
-    // Fast downward flick → dismiss
-    if (v > 0.5) {
+    // Fast downward flick or dragged past threshold → dismiss
+    if (v > 0.5 || y > DISMISS_THRESHOLD) {
       handleClose();
       return;
     }
-    // Fast upward flick → full
-    if (v < -0.5) {
-      setSheetY(SNAP_FULL);
-      return;
-    }
-    // Snap to nearest
-    if (y > DISMISS_THRESHOLD) {
-      handleClose();
-    } else if (y > SNAP_HALF * 0.7) {
-      setSheetY(SNAP_HALF);
-    } else {
-      setSheetY(SNAP_FULL);
-    }
+    // Otherwise snap back to full
+    setSheetY(SNAP_FULL);
   }, [sheetY, handleClose]);
 
   // ── Horizontal swipe on image (mobile) ──
@@ -486,7 +475,7 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
       {/* ── Mobile: bottom sheet ── */}
       <div
         ref={sheetRef}
-        className={`md:hidden absolute inset-x-0 bottom-0 bg-white rounded-t-2xl overflow-hidden sheet-container ${isClosing ? "sheet-exit" : !isDragging ? "sheet-enter" : ""}`}
+        className={`md:hidden absolute inset-x-0 bottom-0 bg-white overflow-hidden sheet-container ${isClosing ? "sheet-exit" : !isDragging ? "sheet-enter" : ""}`}
         style={{
           top: isDragging ? sheetTranslateY : undefined,
           willChange: isDragging ? "transform" : "auto",
@@ -496,18 +485,27 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
           }),
         }}
       >
-        {/* Drag handle */}
+        {/* Drag handle + close button */}
         <div
-          className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing"
+          className="relative cursor-grab active:cursor-grabbing"
           onTouchStart={handleSheetTouchStart}
           onTouchMove={handleSheetTouchMove}
           onTouchEnd={handleSheetTouchEnd}
           onTouchCancel={handleSheetTouchEnd}
         >
-          <div className="w-9 h-1 rounded-full bg-neutral-300" />
+          <div className="flex justify-center pt-2 pb-1">
+            <div className="w-9 h-1 rounded-full bg-neutral-300" />
+          </div>
+          <button
+            onClick={handleClose}
+            className="absolute top-2 right-3 w-8 h-8 flex items-center justify-center text-neutral-400 active:text-neutral-900"
+            aria-label="Lukk"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="4" y1="4" x2="16" y2="16" /><line x1="16" y1="4" x2="4" y2="16" /></svg>
+          </button>
         </div>
 
-        {/* Navigation dots */}
+        {/* Navigation */}
         <div className="flex items-center justify-between px-4 pb-2">
           <button onClick={goPrev} disabled={!hasPrev} className="w-8 h-8 flex items-center justify-center rounded-full text-neutral-400 disabled:opacity-20 active:bg-neutral-100">
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="11,3 5,9 11,15" /></svg>

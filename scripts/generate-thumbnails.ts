@@ -98,7 +98,7 @@ async function main() {
   }
 
   console.log("Fetching api.json...");
-  const res = await fetch(API_URL);
+  const res = await fetch(API_URL, { signal: AbortSignal.timeout(60_000) });
   if (!res.ok) throw new Error(`Failed to fetch api.json: ${res.status}`);
   const data = await res.json();
   const chairs: any[] = data.chairs || [];

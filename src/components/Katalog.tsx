@@ -93,12 +93,12 @@ export default function Katalog({ stolar }: KatalogProps) {
   const hasAnyFilter = activeFilter !== null || searchQuery.length > 0;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       <header className="px-3 md:px-6 pt-4 pb-1">
         <div className="max-w-[1800px] mx-auto">
           <div className="mb-4">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-neutral-900 leading-[0.85] tracking-tighter">
-              Norske<br />stolar.
+              stolar.
             </h1>
             <div className="mt-2 flex items-end gap-4">
               <p className="text-base md:text-xl text-neutral-500">
