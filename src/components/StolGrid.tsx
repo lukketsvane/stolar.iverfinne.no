@@ -13,6 +13,7 @@ interface StolGridProps {
 
 const MIN_SIZE = 40;
 const MAX_SIZE = 280;
+const PREVIEW_IMAGE_SIZE = 384;
 
 function parseId(objektId: string): { prefix: string; shortId: string } {
   if (!objektId) return { prefix: "", shortId: "" };
@@ -314,7 +315,7 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
         >
           <div className="preview-card bg-white rounded-2xl shadow-2xl overflow-hidden max-w-[280px] w-[70vw]" onClick={(e) => { e.stopPropagation(); openFromPreview(); }}>
             <div className="aspect-square bg-neutral-50 p-4 relative">
-              <ThumbnailImage stol={preview} size={384} />
+              <ThumbnailImage stol={preview} size={PREVIEW_IMAGE_SIZE} />
             </div>
             <div className="p-3 border-t border-neutral-100">
               <p className="font-bold text-sm text-neutral-900 uppercase tracking-tight truncate">{displayName(preview.namn)}</p>
