@@ -4,6 +4,7 @@ export interface Stol {
   objektId: string;
   bileteUrl: string | null;
   bileteBguw: string | null;
+  thumbnailUrl: string | null;
   datering: string;
   fraaAar: number | null;
   tilAar: number | null;
