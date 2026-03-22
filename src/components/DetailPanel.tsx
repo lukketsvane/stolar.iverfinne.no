@@ -74,15 +74,6 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
     isVertical: null as boolean | null,
   });
 
-  // Swipe navigation state
-  const [swipeX, setSwipeX] = useState(0);
-  const [isSwiping, setIsSwiping] = useState(false);
-  const swipeRef = useRef({
-    startX: 0,
-    startY: 0,
-    isHorizontal: null as boolean | null,
-    startTime: 0,
-  });
 
   const currentIndex = stolar.findIndex((s) => s.id === stol.id);
   const hasPrev = currentIndex > 0;
@@ -177,61 +168,6 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
     setSheetY(SNAP_FULL);
   }, [sheetY, handleClose]);
 
-  // ── Horizontal swipe on image (mobile) ──
-  const handleImageTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    swipeRef.current.startX = touch.clientX;
-    swipeRef.current.startY = touch.clientY;
-    swipeRef.current.isHorizontal = null;
-    swipeRef.current.startTime = Date.now();
-  }, []);
-
-  const handleImageTouchMove = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    const dx = touch.clientX - swipeRef.current.startX;
-    const dy = touch.clientY - swipeRef.current.startY;
-
-    // Determine gesture direction
-    if (swipeRef.current.isHorizontal === null) {
-      if (Math.abs(dx) > 12 || Math.abs(dy) > 12) {
-        swipeRef.current.isHorizontal = Math.abs(dx) > Math.abs(dy);
-      } else {
-        return;
-      }
-    }
-
-    if (!swipeRef.current.isHorizontal) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Clamp swipe if no prev/next
-    let clampedDx = dx;
-    if (dx > 0 && !hasPrev) clampedDx = dx * 0.2;
-    if (dx < 0 && !hasNext) clampedDx = dx * 0.2;
-
-    setIsSwiping(true);
-    setSwipeX(clampedDx);
-  }, [hasPrev, hasNext]);
-
-  const handleImageTouchEnd = useCallback(() => {
-    if (!isSwiping) return;
-
-    const dx = swipeX;
-    const elapsed = Date.now() - swipeRef.current.startTime;
-    const velocity = Math.abs(dx) / elapsed;
-    const threshold = velocity > 0.3 ? 40 : 80;
-
-    if (dx > threshold && hasPrev) {
-      goPrev();
-    } else if (dx < -threshold && hasNext) {
-      goNext();
-    }
-
-    setIsSwiping(false);
-    setSwipeX(0);
-    swipeRef.current.isHorizontal = null;
-  }, [isSwiping, swipeX, hasPrev, hasNext, goPrev, goNext]);
 
   const nasjonalitet = stol.nasjonalitet || stol.nasjonalitetAvleidd || null;
   const produsent = stol.produsent || stol.produsentNormalisert || "";
@@ -255,8 +191,6 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
     ? `${sheetY * 100}vh`
     : undefined;
 
-  const prevImageUrl = hasPrev ? getImageUrl(stolar[currentIndex - 1]) : null;
-  const nextImageUrl = hasNext ? getImageUrl(stolar[currentIndex + 1]) : null;
 
   const metadataContent = (
     <div className="p-6">
@@ -383,39 +317,24 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
   );
 
   const imageSection = (
-    <div
-      className="relative aspect-square bg-neutral-50"
-      onTouchStart={handleImageTouchStart}
-      onTouchMove={handleImageTouchMove}
-      onTouchEnd={handleImageTouchEnd}
-      onTouchCancel={handleImageTouchEnd}
-    >
-      {/* Peek: previous image */}
-      {isSwiping && swipeX > 0 && prevImageUrl && (
-        <div
-          className="absolute inset-0 p-8"
-          style={{ transform: `translateX(${swipeX - window.innerWidth}px)`, opacity: Math.min(1, swipeX / 100) }}
-        >
-          <img src={prevImageUrl} alt="" className="w-full h-full object-contain opacity-50" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-        </div>
-      )}
-      {/* Peek: next image */}
-      {isSwiping && swipeX < 0 && nextImageUrl && (
-        <div
-          className="absolute inset-0 p-8"
-          style={{ transform: `translateX(${swipeX + window.innerWidth}px)`, opacity: Math.min(1, Math.abs(swipeX) / 100) }}
-        >
-          <img src={nextImageUrl} alt="" className="w-full h-full object-contain opacity-50" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-        </div>
-      )}
-
-      {/* Current image */}
-      <div
-        className="relative w-full h-full"
-        style={isSwiping ? { transform: `translateX(${swipeX}px)`, transition: "none" } : { transition: "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}
-      >
+    <div className="relative aspect-square bg-neutral-50">
+      <div className="relative w-full h-full">
         {show3D && modelUrl ? (
-          <model-viewer src={modelUrl} alt={stol.namn} auto-rotate camera-controls disable-zoom disable-pan touch-action="none" interaction-prompt="none" style={{ width: "100%", height: "100%" }} />
+          <model-viewer
+            src={modelUrl}
+            alt={stol.namn}
+            auto-rotate
+            camera-controls
+            disable-zoom
+            disable-pan
+            touch-action="none"
+            interaction-prompt="none"
+            shadow-intensity="1"
+            shadow-softness="0"
+            environment-image="neutral"
+            exposure="1.2"
+            style={{ width: "100%", height: "100%", backgroundColor: "#ffffff" }}
+          />
         ) : imageUrl && !imgFailed ? (
           <div className="w-full h-full p-8">
             <img src={imageUrl} alt={stol.namn} className="w-full h-full object-contain" onError={() => setImgFailed(true)} />
