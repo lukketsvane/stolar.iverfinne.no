@@ -18,12 +18,16 @@ function splitCsv(s: string | null | undefined): string[] {
 function githubChairToStol(chair: any): Stol {
   const fraaAar = chair.year_from ?? null;
   const objektId = chair.id || "";
+  const thumbnailUrl = objektId
+    ? `https://raw.githubusercontent.com/lukketsvane/stolar-db/main/STOLAR/thumbnails/${encodeURIComponent(objektId)}.webp`
+    : null;
   return {
     id: objektId,
     namn: chair.name || objektId,
     objektId,
     bileteUrl: chair.source_image_url || null,
     bileteBguw: chair.bguw_url || null,
+    thumbnailUrl,
     datering: chair.dating || "",
     fraaAar,
     tilAar: chair.year_to ?? null,

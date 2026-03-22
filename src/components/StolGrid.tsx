@@ -1,7 +1,6 @@
 "use client";
 
 import { type Stol } from "@/lib/types";
-import Image from "next/image";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 interface StolGridProps {
@@ -30,7 +29,12 @@ function displayName(namn: string): string {
   return namn.replace(/\s*\([^)]*\)\s*$/, "").trim().toUpperCase();
 }
 
-/** Get the best available image URL */
+/** Get thumbnail URL for grid view (pre-generated small WebP) */
+function getThumbnailUrl(stol: Stol): string | null {
+  return stol.thumbnailUrl || stol.bileteBguw || stol.bileteUrl || null;
+}
+
+/** Get full-res image URL for detail/preview */
 function getImageUrl(stol: Stol): string | null {
   return stol.bileteBguw || stol.bileteUrl || null;
 }
@@ -211,7 +215,7 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
         {visibleStolar.map((stol) => {
           const { prefix, shortId } = parseId(stol.objektId);
           const name = displayName(stol.namn);
-          const imgUrl = getImageUrl(stol);
+          const thumbUrl = getThumbnailUrl(stol);
 
           return (
             <button
@@ -233,17 +237,16 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
                 )}
 
                 <div className={`aspect-square ${size >= 96 ? 'p-1.5' : 'p-0.5'}`}>
-                  {imgUrl && !failedImages.has(imgUrl) ? (
-                    <Image
-                      src={imgUrl}
+                  {thumbUrl && !failedImages.has(thumbUrl) ? (
+                    <img
+                      src={thumbUrl}
                       alt={stol.namn}
                       width={imgSize}
                       height={imgSize}
                       loading="lazy"
                       draggable={false}
-                      quality={50}
                       className="w-full h-full object-contain pointer-events-none select-none"
-                      onError={() => handleImageError(imgUrl)}
+                      onError={() => handleImageError(thumbUrl)}
                     />
                   ) : (
                     <Initials namn={stol.namn} />
