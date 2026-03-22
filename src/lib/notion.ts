@@ -73,10 +73,19 @@ export async function fetchAllStolar(): Promise<Stol[]> {
   const data = await res.json();
   const chairs: any[] = data.chairs || [];
 
-  const stolar = chairs
+  const mapped = chairs
     .map(githubChairToStol)
-    .filter((s) => s.objektId)
-    .sort((a, b) => (b.fraaAar ?? 0) - (a.fraaAar ?? 0));
+    .filter((s) => s.objektId);
+
+  // Deduplicate by objektId – first occurrence wins
+  const seen = new Set<string>();
+  const unique = mapped.filter((s) => {
+    if (seen.has(s.objektId)) return false;
+    seen.add(s.objektId);
+    return true;
+  });
+
+  const stolar = unique.sort((a, b) => (b.fraaAar ?? 0) - (a.fraaAar ?? 0));
 
   return stolar;
 }

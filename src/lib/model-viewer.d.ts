@@ -13,6 +13,10 @@ declare module "react" {
           "disable-pan"?: boolean | string;
           "touch-action"?: string;
           "interaction-prompt"?: string;
+          "shadow-intensity"?: string;
+          "shadow-softness"?: string;
+          "environment-image"?: string;
+          exposure?: string;
           poster?: string;
           loading?: string;
           ar?: boolean | string;
