@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { type Stol } from "@/lib/types";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 
 interface StolGridProps {
   stolar: Stol[];
@@ -29,14 +30,21 @@ function displayName(namn: string): string {
   return namn.replace(/\s*\([^)]*\)\s*$/, "").trim().toUpperCase();
 }
 
-/** Get thumbnail URL for grid view (pre-generated small WebP) */
-function getThumbnailUrl(stol: Stol): string | null {
-  return stol.thumbnailUrl || stol.bileteBguw || stol.bileteUrl || null;
+/** Build the ordered list of candidate image URLs for a chair */
+function getImageUrls(stol: Stol): string[] {
+  return [stol.thumbnailUrl, stol.bileteBguw, stol.bileteUrl].filter(
+    (u): u is string => !!u,
+  );
 }
 
-/** Get full-res image URL for detail/preview */
-function getImageUrl(stol: Stol): string | null {
-  return stol.bileteBguw || stol.bileteUrl || null;
+/** Deduplicate an array while preserving order */
+function unique(urls: string[]): string[] {
+  const seen = new Set<string>();
+  return urls.filter((u) => {
+    if (seen.has(u)) return false;
+    seen.add(u);
+    return true;
+  });
 }
 
 /** Initials placeholder for chairs without images */
@@ -49,14 +57,51 @@ function Initials({ namn }: { namn: string }) {
   );
 }
 
+/** Thumbnail with Next.js Image optimisation and automatic fallback chain */
+function ThumbnailImage({
+  stol,
+  size,
+  fill: useFill,
+  className,
+}: {
+  stol: Stol;
+  size: number;
+  fill?: boolean;
+  className?: string;
+}) {
+  const urls = useMemo(() => unique(getImageUrls(stol)), [stol]);
+  const [urlIndex, setUrlIndex] = useState(0);
+
+  if (urlIndex >= urls.length) {
+    return <Initials namn={stol.namn} />;
+  }
+
+  const imgProps = useFill
+    ? { fill: true as const }
+    : { width: size, height: size };
+
+  return (
+    <Image
+      key={urls[urlIndex]}
+      src={urls[urlIndex]}
+      alt={stol.namn}
+      sizes={`${size}px`}
+      loading="lazy"
+      draggable={false}
+      className={
+        className ??
+        "w-full h-full object-contain pointer-events-none select-none"
+      }
+      onError={() => setUrlIndex((i) => i + 1)}
+      {...imgProps}
+    />
+  );
+}
+
 export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolGridProps) {
   const [visibleCount, setVisibleCount] = useState(120);
   const [preview, setPreview] = useState<Stol | null>(null);
-  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
-  const handleImageError = useCallback((url: string) => {
-    setFailedImages(prev => new Set(prev).add(url));
-  }, []);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const sizeRef = useRef(size);
@@ -215,7 +260,6 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
         {visibleStolar.map((stol) => {
           const { prefix, shortId } = parseId(stol.objektId);
           const name = displayName(stol.namn);
-          const thumbUrl = getThumbnailUrl(stol);
 
           return (
             <button
@@ -236,21 +280,8 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
                   </div>
                 )}
 
-                <div className={`aspect-square ${size >= 96 ? 'p-1.5' : 'p-0.5'}`}>
-                  {thumbUrl && !failedImages.has(thumbUrl) ? (
-                    <img
-                      src={thumbUrl}
-                      alt={stol.namn}
-                      width={imgSize}
-                      height={imgSize}
-                      loading="lazy"
-                      draggable={false}
-                      className="w-full h-full object-contain pointer-events-none select-none"
-                      onError={() => handleImageError(thumbUrl)}
-                    />
-                  ) : (
-                    <Initials namn={stol.namn} />
-                  )}
+                <div className={`aspect-square ${size >= 96 ? 'p-1.5' : 'p-0.5'} bg-neutral-50`}>
+                  <ThumbnailImage stol={stol} size={imgSize} />
                 </div>
 
                 {showLabels && (
@@ -282,17 +313,8 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
           onTouchEnd={dismissPreview}
         >
           <div className="preview-card bg-white rounded-2xl shadow-2xl overflow-hidden max-w-[280px] w-[70vw]" onClick={(e) => { e.stopPropagation(); openFromPreview(); }}>
-            <div className="aspect-square bg-neutral-50 p-4">
-              {(() => { const url = getImageUrl(preview); return url && !failedImages.has(url); })() ? (
-                <img
-                  src={getImageUrl(preview)!}
-                  alt={preview.namn}
-                  className="w-full h-full object-contain"
-                  onError={() => { const url = getImageUrl(preview); if (url) handleImageError(url); }}
-                />
-              ) : (
-                <Initials namn={preview.namn} />
-              )}
+            <div className="aspect-square bg-neutral-50 p-4 relative">
+              <ThumbnailImage stol={preview} size={384} />
             </div>
             <div className="p-3 border-t border-neutral-100">
               <p className="font-bold text-sm text-neutral-900 uppercase tracking-tight truncate">{displayName(preview.namn)}</p>
