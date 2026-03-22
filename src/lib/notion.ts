@@ -18,9 +18,8 @@ function splitCsv(s: string | null | undefined): string[] {
 function githubChairToStol(chair: any): Stol {
   const fraaAar = chair.year_from ?? null;
   const objektId = chair.id || "";
-  const thumbnailUrl = objektId
-    ? `https://raw.githubusercontent.com/lukketsvane/stolar-db/main/STOLAR/thumbnails/${encodeURIComponent(objektId)}.webp`
-    : null;
+  // Use actual source image; Next.js <Image> handles resizing + caching.
+  const thumbnailUrl = chair.bguw_url || chair.source_image_url || null;
   return {
     id: objektId,
     namn: chair.name || objektId,
