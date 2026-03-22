@@ -16,6 +16,7 @@ html {
 body {
   background: #ffffff;
   color: #171717;
+  overflow-x: hidden;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
 }
