@@ -45,20 +45,70 @@ function TappableValue({ category, value, onFilter, className = "" }: { category
   );
 }
 
-function dimSceneLights(viewer: HTMLElement) {
+/**
+ * Set up two physical directional lights at odd angles with hard shadows.
+ * Clones existing DirectionalLight from model-viewer's scene (avoids
+ * needing to import Three.js separately) and repositions them.
+ */
+function setupPhysicalLights(viewer: HTMLElement) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mv = viewer as any;
   const sym = Object.getOwnPropertySymbols(mv).find((s) => s.description === "scene");
   if (!sym) return;
   const scene = mv[sym];
-  if (!scene || scene.userData?.__dimmed) return;
-  scene.userData.__dimmed = true;
+  if (!scene || scene.userData?.__customLit) return;
+  scene.userData.__customLit = true;
+
+  // Collect all existing lights
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const existingLights: any[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   scene.traverse?.((child: any) => {
-    if (child.isDirectionalLight) child.intensity = (child.intensity ?? 1) * 0.4;
-    if (child.isSpotLight || child.isPointLight) child.intensity = (child.intensity ?? 1) * 0.25;
-    if (child.isAmbientLight || child.isHemisphereLight) child.intensity = (child.intensity ?? 1) * 0.08;
+    if (child.isLight) existingLights.push(child);
   });
+
+  // Find a directional light to clone (model-viewer always creates one for shadows)
+  const templateLight = existingLights.find((l) => l.isDirectionalLight);
+
+  // Kill ambient/hemisphere lights — we want physical lights only
+  existingLights.forEach((l) => {
+    if (l.isAmbientLight || l.isHemisphereLight) {
+      l.intensity = 0;
+    }
+  });
+
+  if (templateLight) {
+    // Repurpose the existing directional light as our key light
+    // Position: high front-right, slightly warm
+    templateLight.intensity = 2.5;
+    templateLight.position.set(5, 8, 4);
+    if (templateLight.color?.setHex) templateLight.color.setHex(0xfff0e0);
+    // Hard shadow
+    if (templateLight.shadow) {
+      templateLight.castShadow = true;
+      templateLight.shadow.bias = -0.001;
+      if (templateLight.shadow.mapSize) {
+        templateLight.shadow.mapSize.width = 1024;
+        templateLight.shadow.mapSize.height = 1024;
+      }
+      templateLight.shadow.radius = 1;
+    }
+
+    // Clone for fill/rim light — back-left, cooler, less intense
+    try {
+      const fillLight = templateLight.clone();
+      fillLight.intensity = 1.2;
+      fillLight.position.set(-6, 5, -3);
+      if (fillLight.color?.setHex) fillLight.color.setHex(0xd8e8ff);
+      if (fillLight.shadow) {
+        fillLight.castShadow = true;
+        fillLight.shadow.radius = 1;
+      }
+      scene.add(fillLight);
+    } catch {
+      // Clone not available — single light is fine
+    }
+  }
 }
 
 type Phase = "expand" | "dither" | "reveal" | "done";
@@ -152,7 +202,7 @@ export default function DetailPanel({
   useEffect(() => {
     const el = modelViewerRef.current;
     if (!el) return;
-    const onLoad = () => { setModelReady(true); dimSceneLights(el); };
+    const onLoad = () => { setModelReady(true); setupPhysicalLights(el); };
     el.addEventListener("load", onLoad);
     return () => el.removeEventListener("load", onLoad);
   }, [show3D, modelUrl]);
@@ -289,8 +339,8 @@ export default function DetailPanel({
       interaction-prompt="none"
       environment-image="legacy"
       shadow-intensity="2"
-      shadow-softness="0.8"
-      exposure="0.25"
+      shadow-softness="0"
+      exposure="0.7"
       loading="eager"
       style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
     />
