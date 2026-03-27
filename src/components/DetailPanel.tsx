@@ -120,11 +120,22 @@ export default function DetailPanel({
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [hasOrigin]);
 
+  // Smooth crossfade when navigating between items
+  const [navFade, setNavFade] = useState(false);
+  const prevIdRef = useRef(stol.id);
   useEffect(() => {
-    setImgFailed(false);
-    setModelReady(false);
-    setShow3D(!!glbUrl(stol));
-    scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    if (prevIdRef.current !== stol.id) {
+      prevIdRef.current = stol.id;
+      setNavFade(true);
+      requestAnimationFrame(() => {
+        setImgFailed(false);
+        setModelReady(false);
+        setShow3D(!!glbUrl(stol));
+        scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+        // Let the fade-out render, then fade back in
+        setTimeout(() => setNavFade(false), 60);
+      });
+    }
   }, [stol.id]);
 
   useEffect(() => {
@@ -287,7 +298,7 @@ export default function DetailPanel({
             onTouchEnd={swipe.onTouchEnd}
           >
             <div className="max-w-[1600px] mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-11 sm:h-12">
-              <button onClick={onClose} className="text-[15px] text-neutral-400 hover:text-white active:text-white transition-colors">
+              <button onClick={onClose} className="text-[15px] text-neutral-300 hover:text-white active:text-white transition-colors font-sans tracking-wide">
                 <span className="hidden sm:inline">← </span>tilbake
               </button>
               <div className="hidden sm:flex items-center gap-1">
@@ -306,7 +317,7 @@ export default function DetailPanel({
             <div className="detail-layout">
               {/* Image/3D — tap to toggle between image and 3D model */}
               <div className="detail-image-col" onClick={handleImageTap} style={{ cursor: modelUrl ? "pointer" : "default" }}>
-                <div className={`relative w-full h-full transition-opacity duration-700 ease-out ${contentReady ? "opacity-100" : "opacity-0"}`}>
+                <div className={`relative w-full h-full transition-opacity ease-out ${navFade ? "opacity-0 duration-150" : "opacity-100 duration-500"} ${contentReady ? "" : "opacity-0"}`}>
                   {show3D && modelViewerEl ? (
                     <>
                       {!modelReady && imageUrl && !imgFailed && (
@@ -329,9 +340,9 @@ export default function DetailPanel({
               </div>
 
               {/* Metadata — also swipeable on mobile for prev/next */}
-              <div className="detail-meta-col">
+              <div className={`detail-meta-col transition-opacity ease-out ${navFade ? "opacity-0 duration-100" : "opacity-100 duration-400"}`}>
                 <div
-                  className="p-5 sm:p-6 lg:p-8 pb-12"
+                  className="p-4 sm:p-5 lg:p-6 pb-10"
                   onTouchStart={swipe.onTouchStart}
                   onTouchEnd={swipe.onTouchEnd}
                 >
@@ -347,14 +358,14 @@ export default function DetailPanel({
                   </div>
 
                   {materialtekst && (
-                    <div className={`mt-4 transition-all duration-500 delay-200 ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
-                      <p className="text-[14px] text-neutral-400 leading-relaxed">{materialtekst}</p>
+                    <div className={`mt-2.5 transition-all duration-500 delay-200 ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
+                      <p className="text-[13px] text-neutral-400 leading-relaxed">{materialtekst}</p>
                     </div>
                   )}
 
-                  <div className={`mt-6 transition-all duration-500 delay-300 ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
-                    <h3 className="text-[12px] uppercase tracking-wider text-neutral-500 font-semibold mb-3 pb-2 border-b border-neutral-800/60">Verksinformasjon</h3>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
+                  <div className={`mt-4 transition-all duration-500 delay-300 ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
+                    <h3 className="text-[11px] uppercase tracking-wider text-neutral-500 font-semibold mb-2 pb-1.5 border-b border-neutral-800/60">Verksinformasjon</h3>
+                    <div className="grid grid-cols-2 gap-x-5 gap-y-2">
                       {uniqueInfoPairs.map((pair, i) => (
                         <div key={`${pair.label}-${i}`} className="min-w-0">
                           <dt className="text-[10px] uppercase tracking-wider text-neutral-500 font-medium leading-tight">{pair.label}</dt>
@@ -369,7 +380,7 @@ export default function DetailPanel({
                   </div>
 
                   {materialTags.length > 0 && (
-                    <div className={`mt-5 pt-4 border-t border-neutral-800/40 transition-all duration-500 delay-[400ms] ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
+                    <div className={`mt-3 pt-3 border-t border-neutral-800/40 transition-all duration-500 delay-[400ms] ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
                       <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-medium mb-2">Materialar</p>
                       <div className="flex flex-wrap gap-1.5">
                         {materialTags.map((m) => (
@@ -382,7 +393,7 @@ export default function DetailPanel({
                   )}
 
                   {stol.teknikk.length > 0 && (
-                    <div className={`mt-4 pt-4 border-t border-neutral-800/40 transition-all duration-500 delay-[450ms] ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
+                    <div className={`mt-3 pt-3 border-t border-neutral-800/40 transition-all duration-500 delay-[450ms] ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
                       <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-medium mb-2">Teknikk</p>
                       <div className="flex flex-wrap gap-1.5">
                         {stol.teknikk.map((t) => (
@@ -394,7 +405,7 @@ export default function DetailPanel({
                     </div>
                   )}
 
-                  <div className={`mt-5 pt-4 border-t border-neutral-800/40 transition-all duration-500 delay-500 ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
+                  <div className={`mt-3 pt-3 border-t border-neutral-800/40 transition-all duration-500 delay-500 ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
                     {stol.nasjonalmuseetUrl && (
                       <a href={stol.nasjonalmuseetUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] text-neutral-500 hover:text-white active:text-white transition-colors">
                         Sjå hos Nasjonalmuseet ↗
@@ -404,7 +415,7 @@ export default function DetailPanel({
                   </div>
 
                   {relatedItems.length > 0 && (
-                    <div className={`mt-6 pt-5 border-t border-neutral-800/40 transition-all duration-500 delay-[600ms] ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
+                    <div className={`mt-4 pt-3 border-t border-neutral-800/40 transition-all duration-500 delay-[600ms] ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
                       <h3 className="text-[11px] uppercase tracking-wider text-neutral-500 mb-3">Utforsk andre verk</h3>
                       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
                         {relatedItems.slice(0, 12).map((r) => (

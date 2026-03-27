@@ -23,7 +23,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#ffffff",
+  themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({
@@ -37,7 +37,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body
-        className="font-sans antialiased bg-white text-neutral-900 overscroll-none"
+        className="font-sans antialiased bg-neutral-950 text-neutral-200 overscroll-none"
       >
         {children}
         <Script
