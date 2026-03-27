@@ -111,7 +111,7 @@ function setupPhysicalLights(viewer: HTMLElement) {
   }
 }
 
-type Phase = "expand" | "dither" | "reveal" | "done";
+type Phase = "hidden" | "expand" | "dither" | "reveal" | "done";
 
 /** Hook for horizontal swipe gesture detection */
 function useSwipeNav(
@@ -154,21 +154,14 @@ export default function DetailPanel({
   const modelViewerRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const hasOrigin = !!transitionOrigin;
-  const [phase, setPhase] = useState<Phase>(hasOrigin ? "expand" : "reveal");
+  const [phase, setPhase] = useState<Phase>("hidden");
 
   useEffect(() => {
-    if (!hasOrigin) {
-      setPhase("reveal");
-      const t = setTimeout(() => setPhase("done"), 700);
-      return () => clearTimeout(t);
-    }
-    setPhase("expand");
-    const t1 = setTimeout(() => setPhase("dither"), 50);
-    const t2 = setTimeout(() => setPhase("reveal"), 550);
-    const t3 = setTimeout(() => setPhase("done"), 1100);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [hasOrigin]);
+    // Simple gradual fade-in
+    const t1 = requestAnimationFrame(() => setPhase("reveal"));
+    const t2 = setTimeout(() => setPhase("done"), 600);
+    return () => { cancelAnimationFrame(t1); clearTimeout(t2); };
+  }, []);
 
   // Smooth crossfade when navigating between items
   // Don't reset show3D if next item also has a model — avoids image flash
@@ -321,9 +314,7 @@ export default function DetailPanel({
 
   const contentReady = phase === "reveal" || phase === "done";
 
-  const transitionOverlay = hasOrigin && phase !== "done" && (
-    <TransitionOverlay origin={transitionOrigin!} imageUrl={imageUrl} phase={phase} />
-  );
+  const fadeIn = phase === "reveal" || phase === "done";
 
   // model-viewer element (shared between desktop/mobile via image col)
   const modelViewerEl = modelUrl && show3D ? (
@@ -347,13 +338,10 @@ export default function DetailPanel({
   ) : null;
 
   return (
-    <div className="fixed inset-0 z-50">
-      {transitionOverlay}
-
-      <div
-        className="absolute inset-0 bg-neutral-950 transition-opacity duration-500 ease-out"
-        style={{ opacity: contentReady ? 1 : 0 }}
-      >
+    <div
+      className="fixed inset-0 z-50 bg-neutral-950 transition-opacity duration-500 ease-out"
+      style={{ opacity: fadeIn ? 1 : 0 }}
+    >
         <div ref={scrollRef} className="h-full overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
 
           {/* Nav bar — swipeable on mobile for prev/next */}
@@ -499,10 +487,11 @@ export default function DetailPanel({
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 }
+
+// TransitionOverlay removed — using simple fade instead
 
 function TransitionOverlay({
   origin, imageUrl, phase,

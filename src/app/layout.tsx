@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import Script from "next/script";
 import "./globals.css";
 
@@ -32,12 +34,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="nn">
+    <html lang="nn" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body
-        className="font-sans antialiased bg-neutral-950 text-neutral-200 overscroll-none"
+        className={`${GeistSans.className} antialiased bg-neutral-950 text-neutral-200 overscroll-none`}
       >
         {children}
         <Script
