@@ -51,39 +51,13 @@ body {
 
 /* ── iOS spring curve: cubic-bezier(0.32, 0.72, 0, 1) ── */
 
-/* Desktop: slide in from right */
-@keyframes slideIn {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+/* Detail page: full-page fade-in */
+@keyframes detailPageIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-@keyframes slideOut {
-  from { transform: translateX(0); }
-  to { transform: translateX(100%); }
-}
-.panel-enter {
-  animation: slideIn 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-}
-.panel-exit-right {
-  animation: slideOut 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
-
-/* Mobile: bottom sheet slides up */
-@keyframes sheetUp {
-  from { transform: translateY(100vh); }
-  to { transform: translateY(0); }
-}
-@keyframes sheetDown {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(100vh); opacity: 0; }
-}
-.sheet-enter {
-  animation: sheetUp 0.5s cubic-bezier(0.32, 0.72, 0, 1);
-}
-.sheet-exit {
-  animation: sheetDown 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
-.sheet-container {
-  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.12);
+.detail-page-enter {
+  animation: detailPageIn 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Backdrop */
@@ -100,6 +74,26 @@ body {
 }
 .backdrop-exit {
   animation: fadeOut 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* ── Detail view (dark theme) ── */
+.detail-nav-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #737373;
+  transition: color 0.15s, background 0.15s;
+}
+.detail-nav-btn:hover:not(:disabled) {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+.detail-nav-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
 }
 
 /* ── Long-press preview ── */
