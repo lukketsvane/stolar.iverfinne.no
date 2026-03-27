@@ -121,6 +121,7 @@ export default function DetailPanel({
   }, [hasOrigin]);
 
   // Smooth crossfade when navigating between items
+  // Don't reset show3D if next item also has a model — avoids image flash
   const [navFade, setNavFade] = useState(false);
   const prevIdRef = useRef(stol.id);
   useEffect(() => {
@@ -129,14 +130,24 @@ export default function DetailPanel({
       setNavFade(true);
       requestAnimationFrame(() => {
         setImgFailed(false);
-        setModelReady(false);
-        setShow3D(!!glbUrl(stol));
+        const newModelUrl = glbUrl(stol);
+        // Only flip to image if new item has no 3D model
+        if (!newModelUrl) setShow3D(false);
+        else if (!show3D) setShow3D(true);
+        // Don't reset modelReady — model-viewer handles src change internally
         scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
-        // Let the fade-out render, then fade back in
         setTimeout(() => setNavFade(false), 60);
       });
     }
-  }, [stol.id]);
+  }, [stol.id, show3D]);
+
+  // Update URL hash for shareable links
+  useEffect(() => {
+    const hash = `#${encodeURIComponent(stol.objektId)}`;
+    if (window.location.hash !== hash) {
+      window.history.replaceState(null, "", hash);
+    }
+  }, [stol.objektId]);
 
   useEffect(() => {
     const el = modelViewerRef.current;
@@ -228,24 +239,28 @@ export default function DetailPanel({
     return related;
   }, [stol, stolar, produsent]);
 
-  const infoPairs: { label: string; value: string; category?: string }[] = [];
-  if (stol.datering) infoPairs.push({ label: "Datering", value: stol.datering });
-  if (stol.hundreaar) infoPairs.push({ label: "Hundreår", value: stol.hundreaar, category: "hundreaar" });
-  if (dimStr) infoPairs.push({ label: "Mål", value: `${dimStr} cm` });
-  if (stol.setehoegde) infoPairs.push({ label: "Setehøgde", value: `${stol.setehoegde} cm` });
-  if (stol.estimertVekt != null && stol.estimertVekt > 0) infoPairs.push({ label: "Vekt", value: `${stol.estimertVekt} kg` });
-  if (nemning) infoPairs.push({ label: "Betegnelse", value: nemning, category: "nemning" });
-  if (materialTags.length > 0) infoPairs.push({ label: "Materiale", value: materialTags.join(", "), category: "materialar" });
-  if (materialtekst) infoPairs.push({ label: "Materiale og teknikk", value: materialtekst });
-  if (stol.teknikk.length > 0) infoPairs.push({ label: "Dekorteknikk", value: stol.teknikk.join(", ") });
-  if (stol.stilperiode) infoPairs.push({ label: "Stilperiode", value: stol.stilperiode, category: "stilperiode" });
-  if (produsent && produsent !== "Ikkje registrert") infoPairs.push({ label: "Produsent", value: produsent, category: "produsent" });
-  if (stol.objektId) infoPairs.push({ label: "Inventarnr.", value: stol.objektId });
-  if (produksjonsstad) infoPairs.push({ label: "Produksjonsstad", value: produksjonsstad, category: "produksjonsstad" });
-  if (nasjonalitet) infoPairs.push({ label: "Land", value: nasjonalitet, category: "nasjonalitet" });
-  if (stol.erverving) infoPairs.push({ label: "Ervervelse", value: stol.erverving });
-  if (stol.emneord.length > 0) infoPairs.push({ label: "Emneord", value: stol.emneord.join(", ") });
+  // Show ALL available data — no hiding
+  const dash = "–";
+  const infoPairs: { label: string; value: string; category?: string }[] = [
+    { label: "Inventarnr.", value: stol.objektId || dash },
+    { label: "Datering", value: stol.datering || dash },
+    { label: "Hundreår", value: stol.hundreaar || dash, category: stol.hundreaar ? "hundreaar" : undefined },
+    { label: "Betegnelse", value: nemning || dash, category: nemning ? "nemning" : undefined },
+    { label: "Stilperiode", value: stol.stilperiode || dash, category: stol.stilperiode ? "stilperiode" : undefined },
+    { label: "Produsent", value: produsent || dash, category: produsent && produsent !== "Ikkje registrert" ? "produsent" : undefined },
+    { label: "Produksjonsstad", value: produksjonsstad || dash, category: produksjonsstad ? "produksjonsstad" : undefined },
+    { label: "Land", value: nasjonalitet || dash, category: nasjonalitet ? "nasjonalitet" : undefined },
+    { label: "Materiale", value: materialTags.length > 0 ? materialTags.join(", ") : dash, category: materialTags.length > 0 ? "materialar" : undefined },
+    { label: "Materiale og teknikk", value: materialtekst || dash },
+    { label: "Dekorteknikk", value: stol.teknikk.length > 0 ? stol.teknikk.join(", ") : dash },
+    { label: "Mål", value: dimStr ? `${dimStr} cm` : dash },
+    { label: "Setehøgde", value: stol.setehoegde ? `${stol.setehoegde} cm` : dash },
+    { label: "Vekt", value: stol.estimertVekt != null && stol.estimertVekt > 0 ? `${stol.estimertVekt} kg` : dash },
+    { label: "Ervervelse", value: stol.erverving || dash },
+    { label: "Emneord", value: stol.emneord.length > 0 ? stol.emneord.join(", ") : dash },
+  ];
 
+  // Dedupe exact duplicates
   const seenLabels = new Set<string>();
   const uniqueInfoPairs = infoPairs.filter(p => {
     const key = `${p.label}:${p.value}`;

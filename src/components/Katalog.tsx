@@ -42,6 +42,30 @@ export default function Katalog({ stolar }: KatalogProps) {
 
   const searchIndex = useMemo(() => buildIndex(stolar), [stolar]);
 
+  // Open chair from URL hash on mount (e.g. #OK-12345)
+  useEffect(() => {
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    if (hash) {
+      const match = stolar.find((s) => s.objektId === hash || s.id === hash);
+      if (match) setSelectedStol(match);
+    }
+  }, [stolar]);
+
+  // Listen for browser back/forward hash changes
+  useEffect(() => {
+    const onHashChange = () => {
+      const hash = decodeURIComponent(window.location.hash.slice(1));
+      if (!hash) {
+        setSelectedStol(null);
+      } else {
+        const match = stolar.find((s) => s.objektId === hash || s.id === hash);
+        if (match) setSelectedStol(match);
+      }
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, [stolar]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSelectedStol(null);
@@ -163,7 +187,7 @@ export default function Katalog({ stolar }: KatalogProps) {
           stolar={filtered}
           onNavigate={setSelectedStol}
           onFilter={handleFilter}
-          onClose={() => setSelectedStol(null)}
+          onClose={() => { setSelectedStol(null); window.history.replaceState(null, "", window.location.pathname); }}
           transitionOrigin={transitionOrigin}
         />
       )}
