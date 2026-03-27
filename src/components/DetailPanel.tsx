@@ -230,10 +230,23 @@ export default function DetailPanel({
     return () => { document.body.style.overflow = ""; };
   }, []);
 
-  // Toggle 3D/image by tapping the image area
-  const handleImageTap = useCallback(() => {
-    if (modelUrl) setShow3D((v) => !v);
-  }, [modelUrl]);
+  // Toggle 3D/image ONLY on a clean tap on the flat image (not the 3D canvas)
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    pointerStart.current = { x: e.clientX, y: e.clientY };
+  }, []);
+  const handleImageTap = useCallback((e: React.MouseEvent) => {
+    // Never toggle when the 3D model is showing — drags & taps on the
+    // canvas should stay on the canvas, not flash the tile image.
+    if (show3D) return;
+    // Guard against drag-then-release registering as a click
+    if (pointerStart.current) {
+      const dx = e.clientX - pointerStart.current.x;
+      const dy = e.clientY - pointerStart.current.y;
+      if (dx * dx + dy * dy > 100) return;         // >10 px movement = drag
+    }
+    if (modelUrl) setShow3D(true);                  // image → 3D only
+  }, [modelUrl, show3D]);
 
   const nasjonalitet = stol.nasjonalitet || stol.nasjonalitetAvleidd || null;
   const produsent = stol.produsent || stol.produsentNormalisert || "";
@@ -369,7 +382,7 @@ export default function DetailPanel({
           <div className="max-w-[1600px] mx-auto">
             <div className="detail-layout">
               {/* Image/3D — tap to toggle between image and 3D model */}
-              <div className="detail-image-col" onClick={handleImageTap} style={{ cursor: modelUrl ? "pointer" : "default" }}>
+              <div className="detail-image-col" onPointerDown={handlePointerDown} onClick={handleImageTap} style={{ cursor: modelUrl && !show3D ? "pointer" : "default" }}>
                 <div className={`relative w-full h-full transition-opacity ease-out ${navFade ? "opacity-0 duration-150" : "opacity-100 duration-500"} ${contentReady ? "" : "opacity-0"}`}>
                   {show3D && modelViewerEl ? (
                     <>
