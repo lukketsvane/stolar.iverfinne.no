@@ -11,14 +11,23 @@ interface DetailPanelProps {
   onClose: () => void;
 }
 
+/** Resolve to actual GLB binary – Git LFS files need media.githubusercontent.com */
 function glbUrl(stol: Stol): string | null {
   if (!stol.tredfil) return null;
-  if (stol.tredfil.startsWith("http")) return stol.tredfil;
-  const id = stol.objektId;
-  if (id.startsWith("OK-") || id.startsWith("NMK")) {
-    return `https://raw.githubusercontent.com/lukketsvane/stolar-db/main/NM_stolar/${id}/${stol.tredfil}`;
+  let url = stol.tredfil;
+  if (!url.startsWith("http")) {
+    const id = stol.objektId;
+    if (id.startsWith("OK-") || id.startsWith("NMK")) {
+      url = `https://raw.githubusercontent.com/lukketsvane/stolar-db/main/NM_stolar/${id}/${url}`;
+    } else {
+      url = `https://raw.githubusercontent.com/lukketsvane/stolar-db/main/VA_3d/${id}/${url}`;
+    }
   }
-  return `https://raw.githubusercontent.com/lukketsvane/stolar-db/main/VA_3d/${id}/${stol.tredfil}`;
+  // raw.githubusercontent.com returns LFS pointer files, not actual binaries
+  return url.replace(
+    "https://raw.githubusercontent.com/",
+    "https://media.githubusercontent.com/media/"
+  );
 }
 
 function getImageUrl(stol: Stol): string | null {
@@ -55,11 +64,28 @@ const DISMISS_THRESHOLD = 0.7;
 export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClose }: DetailPanelProps) {
   const imageUrl = getImageUrl(stol);
   const modelUrl = glbUrl(stol);
-  const [show3D, setShow3D] = useState(false);
+  const [show3D, setShow3D] = useState(!!modelUrl);
+  const [modelReady, setModelReady] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
+  const modelViewerRef = useRef<HTMLElement>(null);
 
-  useEffect(() => { setImgFailed(false); }, [stol.id]);
+  // Reset state when navigating to a different chair
+  useEffect(() => {
+    setImgFailed(false);
+    setModelReady(false);
+    const newModelUrl = glbUrl(stol);
+    setShow3D(!!newModelUrl);
+  }, [stol.id]);
+
+  // Listen for model-viewer "load" event to know when the mesh is ready
+  useEffect(() => {
+    const el = modelViewerRef.current;
+    if (!el) return;
+    const onLoad = () => setModelReady(true);
+    el.addEventListener("load", onLoad);
+    return () => el.removeEventListener("load", onLoad);
+  }, [show3D, modelUrl]);
 
   // Bottom sheet state
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -80,11 +106,11 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
   const hasNext = currentIndex < stolar.length - 1;
 
   const goPrev = useCallback(() => {
-    if (hasPrev) { setShow3D(false); onNavigate(stolar[currentIndex - 1]); }
+    if (hasPrev) { onNavigate(stolar[currentIndex - 1]); }
   }, [hasPrev, currentIndex, stolar, onNavigate]);
 
   const goNext = useCallback(() => {
-    if (hasNext) { setShow3D(false); onNavigate(stolar[currentIndex + 1]); }
+    if (hasNext) { onNavigate(stolar[currentIndex + 1]); }
   }, [hasNext, currentIndex, stolar, onNavigate]);
 
   const handleClose = useCallback(() => {
@@ -320,21 +346,31 @@ export default function DetailPanel({ stol, stolar, onNavigate, onFilter, onClos
     <div className="relative aspect-square bg-neutral-50">
       <div className="relative w-full h-full">
         {show3D && modelUrl ? (
-          <model-viewer
-            src={modelUrl}
-            alt={stol.namn}
-            auto-rotate
-            camera-controls
-            disable-zoom
-            disable-pan
-            touch-action="none"
-            interaction-prompt="none"
-            shadow-intensity="1"
-            shadow-softness="0"
-            environment-image="neutral"
-            exposure="1.2"
-            style={{ width: "100%", height: "100%", backgroundColor: "#ffffff" }}
-          />
+          <>
+            {/* Image poster shown until the 3D model is fully loaded */}
+            {!modelReady && imageUrl && !imgFailed && (
+              <div className="absolute inset-0 z-10 p-8">
+                <img src={imageUrl} alt={stol.namn} className="w-full h-full object-contain" onError={() => setImgFailed(true)} />
+              </div>
+            )}
+            <model-viewer
+              ref={modelViewerRef}
+              src={modelUrl}
+              alt={stol.namn}
+              auto-rotate
+              camera-controls
+              disable-zoom
+              disable-pan
+              touch-action="none"
+              interaction-prompt="none"
+              shadow-intensity="1"
+              shadow-softness="0"
+              environment-image="neutral"
+              exposure="1.2"
+              loading="eager"
+              style={{ width: "100%", height: "100%", backgroundColor: "#ffffff" }}
+            />
+          </>
         ) : imageUrl && !imgFailed ? (
           <div className="w-full h-full p-8">
             <img src={imageUrl} alt={stol.namn} className="w-full h-full object-contain" onError={() => setImgFailed(true)} />
