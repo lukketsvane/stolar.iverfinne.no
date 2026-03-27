@@ -45,7 +45,6 @@ function TappableValue({ category, value, onFilter, className = "" }: { category
   );
 }
 
-/** Dim model-viewer's default environment lights for a darker look */
 function dimSceneLights(viewer: HTMLElement) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mv = viewer as any;
@@ -56,24 +55,43 @@ function dimSceneLights(viewer: HTMLElement) {
   scene.userData.__dimmed = true;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   scene.traverse?.((child: any) => {
-    if (child.isDirectionalLight) {
-      child.intensity = (child.intensity ?? 1) * 0.4;
-    }
-    if (child.isSpotLight || child.isPointLight) {
-      child.intensity = (child.intensity ?? 1) * 0.25;
-    }
-    if (child.isAmbientLight || child.isHemisphereLight) {
-      child.intensity = (child.intensity ?? 1) * 0.08;
-    }
+    if (child.isDirectionalLight) child.intensity = (child.intensity ?? 1) * 0.4;
+    if (child.isSpotLight || child.isPointLight) child.intensity = (child.intensity ?? 1) * 0.25;
+    if (child.isAmbientLight || child.isHemisphereLight) child.intensity = (child.intensity ?? 1) * 0.08;
   });
 }
 
-// ── Transition phases ──
-// 1. "expand"  – thumbnail scales from grid position to full screen (pixelated)
-// 2. "dither"  – pixelation dissolves, bg crossfades white→dark
-// 3. "reveal"  – detail content fades in with stagger
-// 4. "done"    – static
 type Phase = "expand" | "dither" | "reveal" | "done";
+
+/** Hook for horizontal swipe gesture detection */
+function useSwipeNav(
+  goPrev: () => void,
+  goNext: () => void,
+  hasPrev: boolean,
+  hasNext: boolean,
+) {
+  const touchRef = useRef({ startX: 0, startY: 0, startTime: 0 });
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchRef.current = { startX: t.clientX, startY: t.clientY, startTime: Date.now() };
+  }, []);
+
+  const onTouchEnd = useCallback((e: React.TouchEvent) => {
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchRef.current.startX;
+    const dy = t.clientY - touchRef.current.startY;
+    const dt = Date.now() - touchRef.current.startTime;
+
+    // Must be horizontal, fast, and at least 50px
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 400) {
+      if (dx < 0 && hasNext) goNext();
+      else if (dx > 0 && hasPrev) goPrev();
+    }
+  }, [goPrev, goNext, hasPrev, hasNext]);
+
+  return { onTouchStart, onTouchEnd };
+}
 
 export default function DetailPanel({
   stol, stolar, onNavigate, onFilter, onClose, transitionOrigin,
@@ -86,26 +104,22 @@ export default function DetailPanel({
   const modelViewerRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Transition state
   const hasOrigin = !!transitionOrigin;
   const [phase, setPhase] = useState<Phase>(hasOrigin ? "expand" : "reveal");
 
-  // Drive the transition timeline
   useEffect(() => {
     if (!hasOrigin) {
       setPhase("reveal");
       const t = setTimeout(() => setPhase("done"), 700);
       return () => clearTimeout(t);
     }
-    // expand → dither → reveal → done
     setPhase("expand");
-    const t1 = setTimeout(() => setPhase("dither"), 50); // start expand on next frame
-    const t2 = setTimeout(() => setPhase("reveal"), 550); // after expand+dither
+    const t1 = setTimeout(() => setPhase("dither"), 50);
+    const t2 = setTimeout(() => setPhase("reveal"), 550);
     const t3 = setTimeout(() => setPhase("done"), 1100);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [hasOrigin]);
 
-  // Reset on navigation within detail view
   useEffect(() => {
     setImgFailed(false);
     setModelReady(false);
@@ -133,6 +147,9 @@ export default function DetailPanel({
     if (hasNext) onNavigate(stolar[currentIndex + 1]);
   }, [hasNext, currentIndex, stolar, onNavigate]);
 
+  // Swipe gesture for mobile nav
+  const swipe = useSwipeNav(goPrev, goNext, hasPrev, hasNext);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
@@ -148,7 +165,11 @@ export default function DetailPanel({
     return () => { document.body.style.overflow = ""; };
   }, []);
 
-  // ── Data ──
+  // Toggle 3D/image by tapping the image area
+  const handleImageTap = useCallback(() => {
+    if (modelUrl) setShow3D((v) => !v);
+  }, [modelUrl]);
+
   const nasjonalitet = stol.nasjonalitet || stol.nasjonalitetAvleidd || null;
   const produsent = stol.produsent || stol.produsentNormalisert || "";
   const produksjonsstad = stol.produksjonsstad || stol.produksjonsstadNormalisert || "";
@@ -196,7 +217,6 @@ export default function DetailPanel({
     return related;
   }, [stol, stolar, produsent]);
 
-  // All info pairs – dense data
   const infoPairs: { label: string; value: string; category?: string }[] = [];
   if (stol.datering) infoPairs.push({ label: "Datering", value: stol.datering });
   if (stol.hundreaar) infoPairs.push({ label: "Hundreår", value: stol.hundreaar, category: "hundreaar" });
@@ -223,32 +243,49 @@ export default function DetailPanel({
     return true;
   });
 
-  // Content visibility
   const contentReady = phase === "reveal" || phase === "done";
 
-  // ── Transition overlay ──
   const transitionOverlay = hasOrigin && phase !== "done" && (
-    <TransitionOverlay
-      origin={transitionOrigin!}
-      imageUrl={imageUrl}
-      phase={phase}
-    />
+    <TransitionOverlay origin={transitionOrigin!} imageUrl={imageUrl} phase={phase} />
   );
+
+  // model-viewer element (shared between desktop/mobile via image col)
+  const modelViewerEl = modelUrl && show3D ? (
+    <model-viewer
+      ref={modelViewerRef}
+      src={modelUrl}
+      alt={stol.namn}
+      auto-rotate
+      camera-controls
+      disable-zoom
+      disable-pan
+      touch-action="none"
+      interaction-prompt="none"
+      environment-image="legacy"
+      shadow-intensity="2"
+      shadow-softness="0.8"
+      exposure="0.25"
+      loading="eager"
+      style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
+    />
+  ) : null;
 
   return (
     <div className="fixed inset-0 z-50">
-      {/* Transition overlay (above everything during animation) */}
       {transitionOverlay}
 
-      {/* Main detail view – fades in during "reveal" phase */}
       <div
         className="absolute inset-0 bg-neutral-950 transition-opacity duration-500 ease-out"
         style={{ opacity: contentReady ? 1 : 0 }}
       >
         <div ref={scrollRef} className="h-full overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
 
-          {/* Nav bar */}
-          <nav className="sticky top-0 z-20 bg-neutral-950/90 backdrop-blur-sm border-b border-neutral-800/40">
+          {/* Nav bar — swipeable on mobile for prev/next */}
+          <nav
+            className="sticky top-0 z-20 bg-neutral-950/90 backdrop-blur-sm border-b border-neutral-800/40"
+            onTouchStart={swipe.onTouchStart}
+            onTouchEnd={swipe.onTouchEnd}
+          >
             <div className="max-w-[1600px] mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-11 sm:h-12">
               <button onClick={onClose} className="text-[15px] text-neutral-400 hover:text-white active:text-white transition-colors">
                 <span className="hidden sm:inline">← </span>tilbake
@@ -265,36 +302,19 @@ export default function DetailPanel({
             </div>
           </nav>
 
-          {/* Content */}
           <div className="max-w-[1600px] mx-auto">
             <div className="detail-layout">
-              {/* Left: image/3D */}
-              <div className="detail-image-col">
+              {/* Image/3D — tap to toggle between image and 3D model */}
+              <div className="detail-image-col" onClick={handleImageTap} style={{ cursor: modelUrl ? "pointer" : "default" }}>
                 <div className={`relative w-full h-full transition-opacity duration-700 ease-out ${contentReady ? "opacity-100" : "opacity-0"}`}>
-                  {show3D && modelUrl ? (
+                  {show3D && modelViewerEl ? (
                     <>
                       {!modelReady && imageUrl && !imgFailed && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center p-6 sm:p-12">
                           <img src={imageUrl} alt={stol.namn} className="max-w-full max-h-full object-contain" onError={() => setImgFailed(true)} />
                         </div>
                       )}
-                      <model-viewer
-                        ref={modelViewerRef}
-                        src={modelUrl}
-                        alt={stol.namn}
-                        auto-rotate
-                        camera-controls
-                        disable-zoom
-                        disable-pan
-                        touch-action="none"
-                        interaction-prompt="none"
-                        environment-image="legacy"
-                        shadow-intensity="2"
-                        shadow-softness="0.8"
-                        exposure="0.25"
-                        loading="eager"
-                        style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
-                      />
+                      {modelViewerEl}
                     </>
                   ) : imageUrl && !imgFailed ? (
                     <div className="w-full h-full flex items-center justify-center p-6 sm:p-12">
@@ -305,17 +325,16 @@ export default function DetailPanel({
                       {(stol.namn || "?")[0]}
                     </div>
                   )}
-                  {modelUrl && !show3D && (
-                    <button onClick={() => setShow3D(true)} className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 w-8 h-8 flex items-center justify-center rounded bg-neutral-800/60 hover:bg-neutral-700 transition-colors" aria-label="Vis 3D-modell">
-                      <img src="/cube-web.png" alt="" width={18} height={18} className="invert opacity-50" />
-                    </button>
-                  )}
                 </div>
               </div>
 
-              {/* Right: metadata */}
+              {/* Metadata — also swipeable on mobile for prev/next */}
               <div className="detail-meta-col">
-                <div className="p-5 sm:p-6 lg:p-8 pb-12">
+                <div
+                  className="p-5 sm:p-6 lg:p-8 pb-12"
+                  onTouchStart={swipe.onTouchStart}
+                  onTouchEnd={swipe.onTouchEnd}
+                >
                   <div className={`transition-all duration-500 delay-100 ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
                     <h2 className="text-[1.5rem] sm:text-[1.75rem] lg:text-[2rem] font-black leading-[1.05] text-white tracking-tight uppercase">
                       {stol.namn}
@@ -333,7 +352,6 @@ export default function DetailPanel({
                     </div>
                   )}
 
-                  {/* Verksinformasjon grid */}
                   <div className={`mt-6 transition-all duration-500 delay-300 ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
                     <h3 className="text-[12px] uppercase tracking-wider text-neutral-500 font-semibold mb-3 pb-2 border-b border-neutral-800/60">Verksinformasjon</h3>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
@@ -350,7 +368,6 @@ export default function DetailPanel({
                     </div>
                   </div>
 
-                  {/* Material tags */}
                   {materialTags.length > 0 && (
                     <div className={`mt-5 pt-4 border-t border-neutral-800/40 transition-all duration-500 delay-[400ms] ease-out ${contentReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
                       <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-medium mb-2">Materialar</p>
@@ -411,45 +428,26 @@ export default function DetailPanel({
   );
 }
 
-// ── Transition overlay: expands thumbnail from grid → fullscreen with dither ──
 function TransitionOverlay({
-  origin,
-  imageUrl,
-  phase,
+  origin, imageUrl, phase,
 }: {
-  origin: TransitionOrigin;
-  imageUrl: string | null;
-  phase: Phase;
+  origin: TransitionOrigin; imageUrl: string | null; phase: Phase;
 }) {
   const { rect, thumbUrl } = origin;
-
-  // Start position (grid thumbnail)
   const startStyle: React.CSSProperties = {
-    position: "fixed",
-    top: rect.top,
-    left: rect.left,
-    width: rect.width,
-    height: rect.height,
-    zIndex: 100,
+    position: "fixed", top: rect.top, left: rect.left,
+    width: rect.width, height: rect.height, zIndex: 100,
   };
-
-  // End position (fullscreen)
   const endStyle: React.CSSProperties = {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100vw",
-    height: "100vh",
-    zIndex: 100,
+    position: "fixed", top: 0, left: 0,
+    width: "100vw", height: "100vh", zIndex: 100,
   };
-
   const isExpanded = phase !== "expand";
   const isDithering = phase === "dither";
   const isRevealing = phase === "reveal" || phase === "done";
 
   return (
     <>
-      {/* Background crossfade: white → transparent (reveals dark underneath) */}
       <div
         className="fixed inset-0 z-[99] transition-opacity ease-out pointer-events-none"
         style={{
@@ -458,50 +456,35 @@ function TransitionOverlay({
           transitionDuration: isRevealing ? "600ms" : "400ms",
         }}
       />
-
-      {/* Thumbnail image that expands */}
       <div
         style={{
           ...(isExpanded ? endStyle : startStyle),
           transition: "all 500ms cubic-bezier(0.32, 0.72, 0, 1)",
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          overflow: "hidden", display: "flex",
+          alignItems: "center", justifyContent: "center",
           backgroundColor: "#0a0a0a",
           opacity: isRevealing ? 0 : 1,
           pointerEvents: "none",
         }}
         className={isRevealing ? "transition-opacity duration-500" : ""}
       >
-        {/* Pixelated thumbnail (dithered look) */}
         <img
-          src={thumbUrl}
-          alt=""
+          src={thumbUrl} alt=""
           style={{
             maxWidth: isExpanded ? "50%" : "100%",
             maxHeight: isExpanded ? "70%" : "100%",
             objectFit: "contain",
             imageRendering: isDithering ? "auto" : "pixelated",
             transition: "all 500ms cubic-bezier(0.32, 0.72, 0, 1)",
-            filter: isDithering
-              ? "contrast(1.05)"
-              : isExpanded
-                ? "contrast(1)"
-                : "none",
+            filter: isDithering ? "contrast(1.05)" : "none",
           }}
-          onError={() => {}} // silent fail, detail view has its own image
+          onError={() => {}}
         />
-
-        {/* Full-res image fades in on top of pixelated version */}
         {imageUrl && isExpanded && (
           <img
-            src={imageUrl}
-            alt=""
+            src={imageUrl} alt=""
             style={{
-              position: "absolute",
-              maxWidth: "50%",
-              maxHeight: "70%",
+              position: "absolute", maxWidth: "50%", maxHeight: "70%",
               objectFit: "contain",
               opacity: isDithering ? 0 : isRevealing ? 0 : 0.8,
               transition: "opacity 400ms ease-out",
@@ -523,8 +506,7 @@ function RelatedThumb({ stol, onClick }: { stol: Stol; onClick: () => void }) {
       <div className="aspect-square bg-neutral-900 rounded overflow-hidden mb-1">
         {!failed ? (
           <img
-            src={src}
-            alt={stol.namn}
+            src={src} alt={stol.namn}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
             onError={() => {
