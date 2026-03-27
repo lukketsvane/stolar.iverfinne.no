@@ -98,8 +98,8 @@ export default function FilterBar({ stolar, activeFilter, onFilter, onClear }: F
               onClick={() => handleSelect(cat, value)}
               className={`underline underline-offset-2 transition-colors ${
                 activeFilter?.category === cat && activeFilter?.value === value
-                  ? "text-neutral-900 decoration-neutral-900 font-medium"
-                  : "text-neutral-500 decoration-neutral-300 hover:text-neutral-900 hover:decoration-neutral-900"
+                  ? "text-white decoration-white font-medium"
+                  : "text-neutral-500 decoration-neutral-600 hover:text-white hover:decoration-white"
               }`}
             >
               {value} <span className="text-neutral-400 no-underline">({counts[cat][value]})</span>
@@ -107,7 +107,7 @@ export default function FilterBar({ stolar, activeFilter, onFilter, onClear }: F
           </span>
         ))}
         {!showAll && values.length > 20 && (
-          <button onClick={() => setShowAll(true)} className="ml-2 text-neutral-400 underline underline-offset-2 decoration-neutral-300 hover:text-neutral-900 text-xs">
+          <button onClick={() => setShowAll(true)} className="ml-2 text-neutral-400 underline underline-offset-2 decoration-neutral-600 hover:text-neutral-900 text-xs">
             +{values.length - 20} meir
           </button>
         )}
@@ -116,10 +116,10 @@ export default function FilterBar({ stolar, activeFilter, onFilter, onClear }: F
   };
 
   return (
-    <nav className="border-b border-neutral-200 pb-4 mb-6">
+    <nav className="border-b border-neutral-800 pb-4 mb-6">
       <div className="flex flex-wrap items-center gap-x-1 text-sm font-normal">
         {activeFilter && (
-          <button onClick={onClear} className="mr-2 text-neutral-400 hover:text-neutral-900 underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-900 transition-colors">
+          <button onClick={onClear} className="mr-2 text-neutral-400 hover:text-neutral-900 underline underline-offset-2 decoration-neutral-600 hover:decoration-neutral-900 transition-colors">
             Vis alle
           </button>
         )}
@@ -130,8 +130,8 @@ export default function FilterBar({ stolar, activeFilter, onFilter, onClear }: F
               onClick={() => toggleCategory(cat)}
               className={`underline underline-offset-2 transition-colors ${
                 activeCategory === cat || activeFilter?.category === cat
-                  ? "text-neutral-900 decoration-neutral-900"
-                  : "text-neutral-500 decoration-neutral-300 hover:text-neutral-900 hover:decoration-neutral-900"
+                  ? "text-white decoration-white"
+                  : "text-neutral-500 decoration-neutral-600 hover:text-white hover:decoration-white"
               }`}
             >
               {CATEGORY_LABELS[cat]}
@@ -156,8 +156,8 @@ export default function FilterBar({ stolar, activeFilter, onFilter, onClear }: F
                           onClick={() => handleSelect("materialar", item.name)}
                           className={`underline underline-offset-2 transition-colors ${
                             activeFilter?.category === "materialar" && activeFilter?.value === item.name
-                              ? "text-neutral-900 decoration-neutral-900 font-medium"
-                              : "text-neutral-500 decoration-neutral-300 hover:text-neutral-900 hover:decoration-neutral-900"
+                              ? "text-white decoration-white font-medium"
+                              : "text-neutral-500 decoration-neutral-600 hover:text-white hover:decoration-white"
                           }`}
                         >
                           {item.name} <span className="text-neutral-400 no-underline">({item.count})</span>
@@ -169,7 +169,7 @@ export default function FilterBar({ stolar, activeFilter, onFilter, onClear }: F
                 );
               })}
               {!showAll && (
-                <button onClick={() => setShowAll(true)} className="text-neutral-400 underline underline-offset-2 decoration-neutral-300 hover:text-neutral-900 transition-colors text-xs">
+                <button onClick={() => setShowAll(true)} className="text-neutral-400 underline underline-offset-2 decoration-neutral-600 hover:text-neutral-900 transition-colors text-xs">
                   Vis alle materialar
                 </button>
               )}

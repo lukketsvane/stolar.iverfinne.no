@@ -57,7 +57,7 @@ export default function SearchBar({
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2 border-b border-neutral-200 pb-2 group focus-within:border-neutral-400 transition-colors">
+      <div className="flex items-center gap-2 border-b border-neutral-700 pb-2 group focus-within:border-neutral-500 transition-colors">
         {/* Search icon */}
         <svg
           width="16"
@@ -78,7 +78,7 @@ export default function SearchBar({
           value={localQuery}
           onChange={(e) => handleChange(e.target.value)}
           placeholder="Søk etter namn, designar, material, teknikk, stad …"
-          className="flex-1 text-sm bg-transparent outline-none text-neutral-900 placeholder:text-neutral-300"
+          className="flex-1 text-sm bg-transparent outline-none text-white placeholder:text-neutral-600"
           spellCheck={false}
           autoComplete="off"
         />
@@ -103,7 +103,7 @@ export default function SearchBar({
               </svg>
             </button>
           ) : (
-            <kbd className="hidden sm:inline-flex text-[10px] text-neutral-300 border border-neutral-200 rounded px-1 py-0.5 font-mono">
+            <kbd className="hidden sm:inline-flex text-[10px] text-neutral-500 border border-neutral-700 rounded px-1 py-0.5 font-mono">
               ⌘K
             </kbd>
           )}

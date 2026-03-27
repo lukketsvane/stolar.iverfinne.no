@@ -18,7 +18,7 @@ export default function SizeToggle({ size, onSizeChange }: SizeToggleProps) {
           className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${
             size === s
               ? "bg-neutral-900 text-white"
-              : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
+              : "bg-neutral-800 text-neutral-500 hover:bg-neutral-700"
           }`}
           aria-label={`${s}px`}
         >

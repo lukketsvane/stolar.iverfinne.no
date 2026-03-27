@@ -4,7 +4,7 @@ import { useMemo, useState, useCallback, useEffect } from "react";
 import { type Stol } from "@/lib/types";
 import { buildIndex, search } from "@/lib/search";
 import FilterBar from "./FilterBar";
-import StolGrid from "./StolGrid";
+import StolGrid, { type TransitionOrigin } from "./StolGrid";
 import DetailPanel from "./DetailPanel";
 import SizeToggle from "./SizeToggle";
 import Sparkline from "./Sparkline";
@@ -37,6 +37,7 @@ export default function Katalog({ stolar }: KatalogProps) {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStol, setSelectedStol] = useState<Stol | null>(null);
+  const [transitionOrigin, setTransitionOrigin] = useState<TransitionOrigin | null>(null);
   const [gridSize, setGridSize] = useState(120);
 
   const searchIndex = useMemo(() => buildIndex(stolar), [stolar]);
@@ -81,6 +82,11 @@ export default function Katalog({ stolar }: KatalogProps) {
     return HUNDREAAR_ORDER.map((h) => ({ label: h, count: counts[h] })).filter((d) => d.count > 0);
   }, [stolar]);
 
+  const handleSelect = useCallback((stol: Stol, origin?: TransitionOrigin) => {
+    setTransitionOrigin(origin ?? null);
+    setSelectedStol(stol);
+  }, []);
+
   const handleFilter = useCallback((category: string, value: string) => {
     setActiveFilter({ category, value });
     setSelectedStol(null);
@@ -93,17 +99,17 @@ export default function Katalog({ stolar }: KatalogProps) {
   const hasAnyFilter = activeFilter !== null || searchQuery.length > 0;
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-neutral-950 overflow-x-hidden">
       <header className="px-3 md:px-6 pt-4 pb-1">
         <div className="max-w-[1800px] mx-auto">
           <div className="mb-4">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-neutral-900 leading-[0.85] tracking-tighter">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-[0.85] tracking-tighter">
               stolar.
             </h1>
             <div className="mt-2 flex items-end gap-4">
               <p className="text-base md:text-xl text-neutral-500">
-                <span className="text-neutral-900 font-black tabular-nums text-xl md:text-2xl">{filtered.length}</span>{" "}
-                {hasAnyFilter ? (<>stolar <span className="text-neutral-400">av {stolar.length}</span></>) : "stolar dokumentert"}
+                <span className="text-white font-black tabular-nums text-xl md:text-2xl">{filtered.length}</span>{" "}
+                {hasAnyFilter ? (<>stolar <span className="text-neutral-500">av {stolar.length}</span></>) : "stolar dokumentert"}
               </p>
               <div className="hidden md:block w-48">
                 <Sparkline data={centuryData} activeValue={activeFilter?.category === "hundreaar" ? activeFilter.value : null} />
@@ -111,7 +117,6 @@ export default function Katalog({ stolar }: KatalogProps) {
             </div>
           </div>
 
-          {/* Active filter chip */}
           {activeFilter && (
             <div className="mb-3">
               <button onClick={handleClear} className="inline-flex items-center gap-1.5 text-sm bg-neutral-900 text-white pl-3 pr-2 py-1 rounded-full">
@@ -144,16 +149,23 @@ export default function Katalog({ stolar }: KatalogProps) {
           {filtered.length === 0 ? (
             <div className="py-20 text-center text-neutral-400">
               <p className="text-lg">{searchQuery ? `Ingen treff for «${searchQuery}»` : "Ingen stolar funne."}</p>
-              <button onClick={handleClearAll} className="mt-2 underline underline-offset-2 text-sm hover:text-neutral-900">Fjern alle filter</button>
+              <button onClick={handleClearAll} className="mt-2 underline underline-offset-2 text-sm hover:text-white">Fjern alle filter</button>
             </div>
           ) : (
-            <StolGrid stolar={filtered} size={gridSize} onSizeChange={setGridSize} onSelect={setSelectedStol} />
+            <StolGrid stolar={filtered} size={gridSize} onSizeChange={setGridSize} onSelect={handleSelect} />
           )}
         </div>
       </main>
 
       {selectedStol && (
-        <DetailPanel stol={selectedStol} stolar={filtered} onNavigate={setSelectedStol} onFilter={handleFilter} onClose={() => setSelectedStol(null)} />
+        <DetailPanel
+          stol={selectedStol}
+          stolar={filtered}
+          onNavigate={setSelectedStol}
+          onFilter={handleFilter}
+          onClose={() => setSelectedStol(null)}
+          transitionOrigin={transitionOrigin}
+        />
       )}
     </div>
   );

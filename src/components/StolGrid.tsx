@@ -4,11 +4,16 @@ import Image from "next/image";
 import { type Stol } from "@/lib/types";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 
+export interface TransitionOrigin {
+  rect: DOMRect;
+  thumbUrl: string;
+}
+
 interface StolGridProps {
   stolar: Stol[];
   size: number;
   onSizeChange: (size: number) => void;
-  onSelect: (stol: Stol) => void;
+  onSelect: (stol: Stol, origin?: TransitionOrigin) => void;
 }
 
 const MIN_SIZE = 40;
@@ -50,7 +55,7 @@ function apiThumbUrl(sourceUrl: string): string {
 function Initials({ namn }: { namn: string }) {
   const letter = (namn || "?")[0].toUpperCase();
   return (
-    <div className="w-full h-full flex items-center justify-center bg-neutral-100 text-neutral-300 text-lg font-bold select-none">
+    <div className="w-full h-full flex items-center justify-center bg-neutral-900 text-neutral-700 text-lg font-bold select-none">
       {letter}
     </div>
   );
@@ -235,12 +240,16 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
     }
   }, []);
 
-  const handleItemClick = useCallback((stol: Stol) => {
+  const handleItemClick = useCallback((e: React.MouseEvent, stol: Stol) => {
     if (longPressRef.current.triggered) {
       longPressRef.current.triggered = false;
       return;
     }
-    onSelect(stol);
+    // Capture the grid item's bounding rect for transition animation
+    const target = (e.currentTarget as HTMLElement).querySelector(".aspect-square") || e.currentTarget;
+    const rect = target.getBoundingClientRect();
+    const thumbSrc = staticThumbUrl(stol.id);
+    onSelect(stol, { rect, thumbUrl: thumbSrc });
   }, [onSelect]);
 
   const dismissPreview = useCallback(() => {
@@ -272,7 +281,7 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
           return (
             <button
               key={stol.id}
-              onClick={() => handleItemClick(stol)}
+              onClick={(e) => handleItemClick(e, stol)}
               onTouchStart={(e) => handleItemTouchStart(e, stol)}
               onTouchMove={handleItemTouchMove}
               onTouchEnd={handleItemTouchEnd}
@@ -280,21 +289,21 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
               className="group cursor-pointer focus:outline-none text-left grid-item-press"
               title={stol.namn}
             >
-              <div className={`relative bg-white overflow-hidden ${size >= 56 ? "border border-neutral-200" : ""}`}>
+              <div className="relative bg-neutral-900 overflow-hidden rounded-sm">
                 {showId && (
-                  <div className="flex justify-between items-baseline px-1 pt-0.5 text-[8px] text-neutral-400 font-mono leading-none select-none">
+                  <div className="flex justify-between items-baseline px-1 pt-0.5 text-[8px] text-neutral-600 font-mono leading-none select-none">
                     <span>{prefix}</span>
                     <span>{shortId.replace(/^(OK-|NMK\.|O)/, "").slice(-6)}</span>
                   </div>
                 )}
 
-                <div className={`aspect-square ${size >= 96 ? 'p-1.5' : 'p-0.5'} bg-neutral-50`}>
+                <div className={`aspect-square ${size >= 96 ? 'p-1.5' : 'p-0.5'} bg-neutral-900`}>
                   <GridThumbnail stol={stol} />
                 </div>
 
                 {showLabels && (
                   <div className="px-1 pb-1 pt-0">
-                    <p className={`${size >= 120 ? 'text-[9px]' : 'text-[8px]'} font-medium text-neutral-700 leading-tight truncate tracking-wide select-none`}>
+                    <p className={`${size >= 120 ? 'text-[9px]' : 'text-[8px]'} font-medium text-neutral-400 leading-tight truncate tracking-wide select-none`}>
                       {name || "STOL"}
                     </p>
                   </div>
@@ -320,13 +329,13 @@ export default function StolGrid({ stolar, size, onSizeChange, onSelect }: StolG
           onClick={dismissPreview}
           onTouchEnd={dismissPreview}
         >
-          <div className="preview-card bg-white rounded-2xl shadow-2xl overflow-hidden max-w-[280px] w-[70vw]" onClick={(e) => { e.stopPropagation(); openFromPreview(); }}>
-            <div className="aspect-square bg-neutral-50 p-4 relative">
+          <div className="preview-card bg-neutral-900 rounded-2xl shadow-2xl overflow-hidden max-w-[280px] w-[70vw]" onClick={(e) => { e.stopPropagation(); openFromPreview(); }}>
+            <div className="aspect-square bg-neutral-900 p-4 relative">
               <PreviewImage stol={preview} size={PREVIEW_IMAGE_SIZE} />
             </div>
-            <div className="p-3 border-t border-neutral-100">
-              <p className="font-bold text-sm text-neutral-900 uppercase tracking-tight truncate">{displayName(preview.namn)}</p>
-              {preview.datering && <p className="text-xs text-neutral-400 mt-0.5">{preview.datering}</p>}
+            <div className="p-3 border-t border-neutral-800">
+              <p className="font-bold text-sm text-white uppercase tracking-tight truncate">{displayName(preview.namn)}</p>
+              {preview.datering && <p className="text-xs text-neutral-500 mt-0.5">{preview.datering}</p>}
               {preview.stilperiode && <p className="text-xs text-neutral-500">{preview.stilperiode}</p>}
             </div>
           </div>

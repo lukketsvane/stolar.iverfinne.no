@@ -14,8 +14,8 @@ html {
 }
 
 body {
-  background: #ffffff;
-  color: #171717;
+  background: #0a0a0a;
+  color: #e5e5e5;
   overflow-x: hidden;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
@@ -51,13 +51,53 @@ body {
 
 /* ── iOS spring curve: cubic-bezier(0.32, 0.72, 0, 1) ── */
 
-/* Detail page: full-page fade-in */
-@keyframes detailPageIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Detail page entrance is handled by JS transition phases */
+
+/* ── Detail responsive layout ──
+   Phone (<600px): stacked (image on top, metadata below)
+   Tablet+ (≥600px): two-column (image left sticky, metadata right scrollable)
+*/
+.detail-layout {
+  display: flex;
+  flex-direction: column;
 }
-.detail-page-enter {
-  animation: detailPageIn 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+.detail-image-col {
+  width: 100%;
+  aspect-ratio: 1;
+  background: #0a0a0a;
+}
+.detail-meta-col {
+  background: #0a0a0a;
+}
+@media (min-width: 600px) {
+  .detail-layout {
+    display: grid;
+    grid-template-columns: 1fr minmax(320px, 440px);
+    min-height: calc(100vh - 3rem);
+  }
+  .detail-image-col {
+    position: sticky;
+    top: 3rem;
+    height: calc(100vh - 3rem);
+    aspect-ratio: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    overflow: hidden;
+  }
+  .detail-meta-col {
+    border-left: 1px solid rgba(64, 64, 64, 0.4);
+    overflow-y: auto;
+  }
+}
+@media (min-width: 1024px) {
+  .detail-layout {
+    grid-template-columns: 1fr minmax(400px, 520px);
+  }
+  .detail-image-col {
+    padding: 3rem;
+  }
 }
 
 /* Backdrop */
